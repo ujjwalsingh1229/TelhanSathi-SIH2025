@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telhan Sathi - OTP Verification</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: #fff;
+            background-color: #1e3a24;
+            background-image: linear-gradient(180deg, #2d5735 0%, #1e3a24 100%);
+        }
+
+        .frame {
+            width: 100%;
+            max-width: 380px;
+            height: 100vh;
+            background-color: transparent;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            position: relative;
+            padding: 10px;
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 10px 0 0;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 45px;
+            height: 45px;
+            background-color: #4caf50;
+            border-radius: 8px;
+            margin-right: 15px;
+            clip-path: polygon(50% 0%, 100% 100%, 50% 80%, 0% 100%);
+            flex-shrink: 0;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #a5d6a7;
+        }
+
+        .content-area {
+            flex-grow: 1;
+        }
+
+        .section-heading {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .otp-instruction {
+            font-size: 16px;
+            color: #a5d6a7;
+            margin-bottom: 40px;
+        }
+
+        .otp-container {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 30px;
+            flex-wrap: nowrap;
+        }
+
+        .otp-input {
+            width: 45px;
+            height: 55px;
+            padding: 6px;
+            border: none;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            transition: border 0.3s, background-color 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .otp-input:focus {
+            border: 2px solid #a5d6a7;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .resend-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .timer-display {
+            font-weight: bold;
+            color: #a5d6a7;
+        }
+
+        .resend-link {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .resend-link:hover:not(.disabled) {
+            color: #4caf50;
+        }
+
+        .resend-link.disabled {
+            color: #757575;
+            cursor: default;
+        }
+
+        .button-group {
+            margin-top: 40px;
+        }
+
+        .primary-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            background: linear-gradient(180deg, #66bb6a 0%, #388e3c 100%);
+            color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s;
+        }
+
+        .primary-button:hover {
+            opacity: 0.9;
+        }
+
+        .primary-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-helper-text {
+            font-size: 12px;
+            color: #a5d6a7;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .copyright {
+            font-size: 10px;
+            color: #a5d6a7;
+            text-align: center;
+            padding: 10px 0;
+            width: 100%;
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+        }
+
+        .error-message {
+            color: #ffcccc;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="frame">
+        <div class="header">
+            <div class="logo"></div>
+            <div class="title-group">
+                <div class="app-title">TELHAN SATHI</div>
+                <div class="subtitle">आपके कृषि समय का विश्वसनीय साथी</div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="section-heading">Security Verification</div>
+            <div class="otp-instruction">OTP sent to mobile ending in {{ phone_masked }}</div>
+
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('auth.verify_otp_post') }}">
+                <input type="hidden" name="farmer_id" value="{{ farmer_id }}">
+                
+                <div class="otp-container" id="otp-container">
+                    <input type="tel" class="otp-input" maxlength="1" data-index="0" inputmode="numeric" required>
+                    <input type="tel" class="otp-input" maxlength="1" data-index="1" inputmode="numeric" required>
+                    <input type="tel" class="otp-input" maxlength="1" data-index="2" inputmode="numeric" required>
+                    <input type="tel" class="otp-input" maxlength="1" data-index="3" inputmode="numeric" required>
+                    <input type="tel" class="otp-input" maxlength="1" data-index="4" inputmode="numeric" required>
+                    <input type="tel" class="otp-input" maxlength="1" data-index="5" inputmode="numeric" required>
+                </div>
+
+                <div class="resend-group">
+                    <div class="timer-display">Resend OTP in <span id="countdown">00:30</span></div>
+                    <a href="#" class="resend-link disabled" id="resend-link">Didn't receive? Resend!</a>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="primary-button" id="verify-button">
+                        Verify & Enter
+                    </button>
+                    <div class="button-helper-text">सत्यापित करें</div>
+                </div>
+                
+                <div class="button-helper-text" style="margin-top: 20px;">By verifying, you agree to our Terms & Privacy</div>
+            </form>
+        </div>
+
+        <div class="copyright">
+            © Govt of India - Telhan Sathi
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('.otp-input');
+            const countdownEl = document.getElementById('countdown');
+            const resendLink = document.getElementById('resend-link');
+            const verifyButton = document.getElementById('verify-button');
+            const otpContainer = document.getElementById('otp-container');
+            const farmerId = document.querySelector('input[name="farmer_id"]').value;
+            let countdownTime = 30;
+            let timer;
+
+            // Store OTP in hidden field
+            function updateOtpField() {
+                const otp = Array.from(inputs).map(input => input.value).join('');
+                // Create hidden input if it doesn't exist
+                let otpInput = document.querySelector('input[name="otp_code"]');
+                if (!otpInput) {
+                    otpInput = document.createElement('input');
+                    otpInput.type = 'hidden';
+                    otpInput.name = 'otp_code';
+                    otpContainer.parentElement.appendChild(otpInput);
+                }
+                otpInput.value = otp;
+            }
+
+            function startTimer() {
+                resendLink.classList.add('disabled');
+                resendLink.removeEventListener('click', handleResend);
+                countdownTime = 30;
+                countdownEl.textContent = '00:' + countdownTime.toString().padStart(2, '0');
+
+                timer = setInterval(() => {
+                    countdownTime--;
+                    countdownEl.textContent = '00:' + countdownTime.toString().padStart(2, '0');
+                    
+                    if (countdownTime <= 0) {
+                        clearInterval(timer);
+                        countdownEl.textContent = '00:00';
+                        resendLink.classList.remove('disabled');
+                        resendLink.addEventListener('click', handleResend);
+                    }
+                }, 1000);
+            }
+
+            function handleResend(event) {
+                event.preventDefault();
+                fetch('{{ url_for("auth.resend_otp") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ farmer_id: farmerId })
+                }).then(r => r.json()).then(data => {
+                    if (data.success) {
+                        // Clear OTP inputs
+                        inputs.forEach(input => input.value = '');
+                        inputs[0].focus();
+                        startTimer();
+                    }
+                });
+            }
+
+            // OTP Input Auto-Jump
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    input.value = input.value.replace(/[^0-9]/g, '');
+                    updateOtpField();
+
+                    if (input.value.length === 1 && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    } else if (input.value.length === 1 && index === inputs.length - 1) {
+                        input.blur();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+
+            // Start timer on load
+            startTimer();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telhan Sathi - Login</title>
+    <style>
+        /* BASE & BACKGROUND STYLES */
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: #fff;
+            background-color: #1e3a24;
+            background-image: linear-gradient(180deg, #2d5735 0%, #1e3a24 100%);
+        }
+
+        .frame {
+            width: 100%;
+            max-width: 380px;
+            height: 100vh;
+            background-color: transparent;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            position: relative;
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 0 0;
+            background-color: transparent;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: #4caf50;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            clip-path: polygon(50% 0%, 100% 100%, 50% 80%, 0% 100%);
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .ministry {
+            font-size: 14px;
+            color: #c8e6c9;
+            margin-bottom: 40px;
+            font-weight: lighter;
+        }
+
+        .login-card {
+            background: rgba(46, 74, 52, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 30px 25px;
+            margin: 0 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .card-heading {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .card-subheading {
+            font-size: 14px;
+            text-align: center;
+            color: #a5d6a7;
+            margin-bottom: 40px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            box-sizing: border-box;
+            outline: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) inset;
+        }
+
+        .input-field::placeholder {
+            color: #888;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 30px;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .primary-button {
+            background: linear-gradient(180deg, #d3d3d3 0%, #b0b0b0 100%);
+            color: #1e3a24;
+        }
+
+        .primary-button:hover {
+            background: linear-gradient(180deg, #e0e0e0 0%, #c0c0c0 100%);
+        }
+
+        .primary-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .link-text {
+            display: block;
+            font-size: 13px;
+            color: #a5d6a7;
+            margin-bottom: 5px;
+        }
+
+        .link {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .link:hover {
+            color: #c8e6c9;
+        }
+
+        .copyright {
+            font-size: 10px;
+            color: #a5d6a7;
+            text-align: center;
+            padding: 10px 0;
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+        }
+
+        .small-helper-text {
+            font-size: 11px;
+            color: #c8e6c9;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            color: #ffcccc;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            background: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="frame">
+        <div class="header">
+            <div class="logo"></div>
+            <div class="app-title">Telhan Sathi</div>
+            <div class="ministry">Ministry of Agriculture</div>
+        </div>
+
+        <div class="login-card">
+            <div class="card-heading">लॉगिन करें</div>
+            <div class="card-subheading">अपनी किसान ID से लॉगिन करें</div>
+
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('auth.login_post') }}">
+                <input
+                    type="text"
+                    id="farmer_id"
+                    name="farmer_id"
+                    class="input-field"
+                    placeholder="1234 - 5678 - 9012"
+                    maxlength="14"
+                    required
+                >
+                <div class="small-helper-text">रजिस्टर्ड / पुराना यूज़र</div>
+
+                <button type="submit" class="button primary-button">
+                    आगे बढ़ें
+                </button>
+            </form>
+
+            <div class="footer-links">
+                <div class="link-text">OTP से लॉगिन करें</div>
+                <a href="{{ url_for('auth.register') }}" class="link">नया खाता खोलें (रजिस्टर करें)</a>
+            </div>
+        </div>
+
+        <div class="copyright">
+            © Govt of India - Telhan Sathi
+        </div>
+    </div>
+
+</body>
+</html>

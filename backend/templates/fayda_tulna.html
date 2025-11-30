@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telhan Sathi - Fayda Tulna</title>
+    <style>
+        /* BASE & BACKGROUND STYLES (Fixed and non-scrolling) */
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: #1e3a24;
+            background-color: #1e3a24;
+            background-image: linear-gradient(180deg, #2d5735 0%, #1e3a24 100%);
+        }
+
+        .frame {
+            width: 100%;
+            max-width: 380px;
+            height: 100vh;
+            overflow: hidden;
+            background-color: transparent;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            position: relative;
+            padding: 8px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin: 0 10px 15px;
+        }
+
+        .header-logo {
+            width: 45px;
+            height: 45px;
+            background-color: #4caf50;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .header-text {
+            line-height: 1.3;
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #c8e6c9;
+        }
+
+        .header-subtitle {
+            font-size: 10px;
+            color: #a5d6a7;
+        }
+
+        .comparison-area {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+            padding: 0 10px;
+        }
+
+        .comparison-card {
+            width: 50%;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .current-card {
+            background-color: #fff;
+            color: #333;
+        }
+        
+        .suggested-card {
+            background-color: #e8f5e9;
+            color: #333;
+        }
+
+        .card-heading {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .crop-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .water-usage {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .water-usage-icons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .water-usage-icons svg {
+            width: 15px;
+            height: 20px;
+            fill: #ef9a9a;
+            opacity: 0.8;
+        }
+
+        .input-cost-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .bar-chart-container {
+            display: flex;
+            align-items: flex-end;
+            height: 60px;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .bar {
+            width: 15px;
+            background-color: #bdbdbd;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .subsidy-box {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .subsidy-box.kit {
+            background-color: #f1f8e9;
+            border: 1px dashed #a5d6a7;
+        }
+        
+        .subsidy-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            background-color: #4caf50;
+            margin-right: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .subsidy-icon-kit { background-color: #fff; border: 1px solid #4caf50; }
+        
+        .subsidy-details {
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        .subsidy-details .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .subsidy-details .value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #388e3c;
+        }
+
+        .profit-section {
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            margin-top: auto;
+        }
+        
+        .estimated-profit-section {
+            padding-top: 15px;
+            border-top: 1px solid #c8e6c9;
+            margin-top: auto;
+        }
+
+        .profit-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .profit-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4caf50;
+            margin-bottom: 5px;
+        }
+        
+        .profit-value-current {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1e3a24;
+            margin-bottom: 5px;
+        }
+
+        .profit-note {
+            font-size: 10px;
+            color: #999;
+            line-height: 1.3;
+        }
+        
+        .action-footer {
+            background-color: #fff;
+            border-radius: 12px;
+            margin: 15px 10px 0;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-text-group {
+            max-width: 60%;
+        }
+
+        .action-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .action-subtitle {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .action-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(180deg, #ff9800 0%, #fb8c00 100%);
+            color: #fff;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.3s;
+            flex-shrink: 0;
+        }
+
+        .action-button:hover {
+            opacity: 0.9;
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="frame">
+        <div class="header">
+            <div class="header-logo">TS</div>
+            <div class="header-text">
+                <div class="header-title">फायदा तुलना</div>
+                <div class="header-subtitle">{{ comparison.current_crop|title }} vs {{ comparison.suggested_crop|title }}</div>
+            </div>
+        </div>
+
+        <div class="comparison-area">
+            
+            <!-- Current Crop Card -->
+            <div class="comparison-card current-card">
+                <div class="card-heading">Current Crop</div>
+                <div class="crop-name">{{ comparison.current_crop|title }}</div>
+                
+                <div class="card-heading">Water Usage</div>
+                <div class="water-usage">
+                    <div class="water-usage-icons">
+                        {% for i in range(5) %}
+                            {% if i < crops[comparison.current_crop]['water_usage'] %}
+                                <svg viewBox="0 0 24 24" fill="#ef9a9a" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            {% else %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#ef9a9a" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="input-cost-label">Input Cost</div>
+                
+                <!-- Bar Chart -->
+                <div class="bar-chart-container">
+                    <div class="bar" style="height: 60%; background-color: #9e9e9e;"></div>
+                    <div class="bar" style="height: 80%; background-color: #9e9e9e;"></div>
+                    <div class="bar" style="height: 100%; background-color: #757575;"></div>
+                    <div class="bar" style="height: 70%; background-color: #9e9e9e;"></div>
+                </div>
+
+                <div class="profit-section">
+                    <div class="profit-label">Net Profit</div>
+                    <div class="profit-value-current">₹{{ "{:,.0f}".format(comparison.current_profit.net_profit) }}</div>
+                    <div class="profit-note">{{ comparison.area }} Acres</div>
+                </div>
+
+                <div class="profit-note" style="margin-top: 15px;">Higher water usage</div>
+            </div>
+
+            <!-- Suggested Crop Card -->
+            <div class="comparison-card suggested-card">
+                <div class="card-heading">Suggested</div>
+                <div class="crop-name">{{ comparison.suggested_crop|title }}</div>
+                
+                <div class="card-heading">Water Usage</div>
+                <div class="water-usage">
+                    <div class="water-usage-icons" style="justify-content: flex-start; gap: 5px;">
+                        {% for i in range(5) %}
+                            {% if i < crops[comparison.suggested_crop]['water_usage'] %}
+                                <svg viewBox="0 0 24 24" fill="#66bb6a" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            {% else %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#66bb6a" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="card-heading">Govt. Subsidy</div>
+                <!-- Subsidy Box -->
+                <div class="subsidy-box">
+                    <div class="subsidy-icon">₹</div>
+                    <div class="subsidy-details">
+                        <span class="label">NMEO Subsidy</span><br>
+                        <span class="value">+ ₹{{ "{:,.0f}".format(comparison.suggested_profit.subsidy) }}</span>
+                    </div>
+                </div>
+                
+                <!-- Free Kit Box -->
+                {% if comparison.suggested_crop == 'mustard' %}
+                <div class="subsidy-box kit">
+                    <div class="subsidy-icon subsidy-icon-kit">
+                        <div style="width: 15px; height: 15px; border: 1px solid #4caf50; background-color: transparent;"></div>
+                    </div>
+                    <div class="subsidy-details">
+                        <span class="label">Seed kit</span><br>
+                        <span class="value">— Free</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="estimated-profit-section">
+                    <div class="profit-label">Estimated Net Profit</div>
+                    <div class="profit-value">₹{{ "{:,.0f}".format(comparison.suggested_profit.net_profit) }}</div>
+                    <div class="profit-note">Includes subsidy & kit</div>
+                </div>
+                
+                <div class="profit-note" style="margin-top: 15px;">Lower water, fewer chemicals</div>
+            </div>
+            
+        </div>
+
+        <!-- Action Footer Button -->
+        <div class="action-footer">
+            <div class="action-text-group">
+                <div class="action-title">Extra Income: ₹{{ "{:,.0f}".format(comparison.additional_income) }}</div>
+                <div class="action-subtitle">Switch to {{ comparison.suggested_crop|title }}</div>
+            </div>
+            <button class="action-button" id="switch-button">
+                Yes, switch
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const switchButton = document.getElementById('switch-button');
+
+            switchButton.addEventListener('click', async () => {
+                switchButton.disabled = true;
+                
+                try {
+                    const response = await fetch('{{ url_for("fayda.accept_suggestion") }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alertBox('✓ Successfully enrolled! Subsidy application submitted. Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = '{{ url_for("fayda.extra_income") }}';
+                        }, 1500);
+                    } else {
+                        const error = await response.json();
+                        alertBox('Error: ' + (error.error || 'Could not process'));
+                        switchButton.disabled = false;
+                    }
+                } catch (err) {
+                    alertBox('Error: ' + err.message);
+                    switchButton.disabled = false;
+                }
+            });
+
+            function alertBox(message) {
+                let modal = document.getElementById('custom-modal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'custom-modal';
+                    modal.style.cssText = `
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background-color: rgba(0, 0, 0, 0.7); z-index: 1000;
+                        display: flex; justify-content: center; align-items: center;
+                        opacity: 0; transition: opacity 0.3s;
+                    `;
+                    document.body.appendChild(modal);
+                    
+                    const content = document.createElement('div');
+                    content.style.cssText = `
+                        background: #1e3a24; padding: 25px; border-radius: 15px;
+                        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); max-width: 300px;
+                        text-align: center; border: 1px solid #4caf50;
+                    `;
+                    
+                    const msgText = document.createElement('p');
+                    msgText.id = 'modal-text';
+                    msgText.textContent = message;
+                    msgText.style.color = '#fff';
+                    msgText.style.marginBottom = '20px';
+                    
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = 'OK';
+                    closeBtn.style.cssText = `
+                        padding: 10px 20px; background-color: #4caf50; color: white;
+                        border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+                        transition: background-color 0.2s;
+                    `;
+                    closeBtn.onmouseover = () => closeBtn.style.backgroundColor = '#388e3c';
+                    closeBtn.onmouseout = () => closeBtn.style.backgroundColor = '#4caf50';
+                    closeBtn.onclick = () => {
+                        modal.style.opacity = 0;
+                        setTimeout(() => modal.style.display = 'none', 300);
+                    };
+                    
+                    content.appendChild(msgText);
+                    content.appendChild(closeBtn);
+                    modal.appendChild(content);
+                } else {
+                    document.getElementById('modal-text').textContent = message;
+                }
+                
+                modal.style.display = 'flex';
+                setTimeout(() => modal.style.opacity = 1, 10);
+            }
+        });
+    </script>
+</body>
+</html>
