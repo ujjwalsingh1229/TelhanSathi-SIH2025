@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, render_template, send_from_directory, url_for, redirect, session
 from flask_cors import CORS
 import os
@@ -5,6 +6,7 @@ from dotenv import load_dotenv
 
 from extensions import db
 from flask_migrate import Migrate  # ✅ Added
+from models_marketplace import *
 
 load_dotenv()
 
@@ -32,11 +34,26 @@ migrate = Migrate(app, db)     # ✅ Added (Important for flask db migrate/upgra
 from routes.auth import auth_bp
 from routes.onboarding import onboarding_bp
 from routes.sahayak import sahayak_bp
+from routes.marketplace import market_bp
+from routes.subsidies import subsidies_bp
+from routes.admin import admin_bp
+from routes.notifications import notifications_bp
+from routes.crop_economics import crop_economics_bp
+from routes.profit_simulator import profit_bp
+from routes.field_monitoring import fm_bp
+from routes.weather import weather_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(onboarding_bp)
 app.register_blueprint(sahayak_bp)
-
+app.register_blueprint(market_bp)
+app.register_blueprint(subsidies_bp)
+app.register_blueprint(admin_bp)
+app.register_blueprint(notifications_bp)
+app.register_blueprint(crop_economics_bp)   
+app.register_blueprint(profit_bp)
+app.register_blueprint(fm_bp)
+app.register_blueprint(weather_bp)
 
 # ----------------------- ROUTES -----------------------
 
@@ -67,12 +84,17 @@ def serve_static(filename):
     """Serve static files."""
     return send_from_directory('static', filename)
 
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow}
+
 
 # ----------------------- APP RUN -----------------------
 if __name__ == '__main__':
     # ❗️IMPORTANT: Do NOT use db.create_all() when using Flask-Migrate
-    # Migrations now handle schema updates.
+    # Migrations now handle schema updateas.
     
+
     app.run(debug=True, host='0.0.0.0', port=5000)
         # ----------------------- CUSTOM CLI COMMANDS -----------------------
 

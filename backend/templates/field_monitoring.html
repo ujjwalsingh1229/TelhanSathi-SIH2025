@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Field Monitoring</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body{font-family:Segoe UI,Arial;padding:16px;background:#f5f7fa}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:14px}
+    .btn{padding:10px 12px;border-radius:8px;border:none;cursor:pointer}
+    .btn-primary{background:#2d7a3e;color:#fff}
+    .btn-ghost{background:#fff;border:1px solid #ccc}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .kv{font-size:13px;color:#555}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Field Monitoring</h2>
+    <div id="statusLine">Loading status…</div>
+  </div>
+
+  <script>
+    // Server-provided initial state (may be empty) to avoid waiting on client fetch
+    window.FM_INIT = {{ init|tojson if init is defined else 'null' }};
+  </script>
+
+  <div id="applyCard" class="card" style="display:none">
+    <h3>Apply for IoT Field Monitoring Kit</h3>
+    <p>Kit includes: ESP32, DHT22, Capacitive soil moisture sensor, LDR, temp probe. Free demo installation may be available.</p>
+    <label>Notes (optional)</label>
+    <div><textarea id="applyNotes" rows="3" style="width:100%"></textarea></div>
+    <div style="margin-top:8px">
+      <button id="applyBtn" class="btn btn-primary">Apply for Kit</button>
+    </div>
+    <div id="applyResult" style="margin-top:8px;color:green"></div>
+  </div>
+
+  <div id="monitorCard" class="card" style="display:none">
+    <h3>🌾 Field Status & Health</h3>
+    
+    <!-- Field Status Badge -->
+    <div id="statusBadge" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;border-radius:8px;background:#f0f0f0">
+      <div style="width:40px;height:40px;border-radius:50%;background:#999" id="statusCircle"></div>
+      <div>
+        <div style="font-weight:bold;font-size:16px" id="statusText">Checking…</div>
+        <div style="font-size:12px;color:#666">Last update: <span id="lastUpdate">-</span></div>
+      </div>
+      <button id="refreshBtn" class="btn btn-ghost" style="margin-left:auto">Refresh</button>
+    </div>
+
+    <!-- Current Metrics -->
+    <div style="margin-bottom:16px">
+      <div style="font-weight:bold;margin-bottom:8px">Current Field Conditions:</div>
+      <div class="grid">
+        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
+          <div style="font-size:12px;color:#666">Temperature</div>
+          <div style="font-size:18px;font-weight:bold" id="tempVal">-</div>
+        </div>
+        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
+          <div style="font-size:12px;color:#666">Humidity</div>
+          <div style="font-size:18px;font-weight:bold" id="humVal">-</div>
+        </div>
+        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
+          <div style="font-size:12px;color:#666">Soil Moisture</div>
+          <div style="font-size:18px;font-weight:bold" id="soilVal">-</div>
+        </div>
+        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
+          <div style="font-size:12px;color:#666">Light</div>
+          <div style="font-size:18px;font-weight:bold" id="lightVal">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div id="recommendationsBox" style="margin-bottom:16px">
+      <div style="font-weight:bold;margin-bottom:8px">💡 Recommendations:</div>
+      <div id="recommendationsList" style="border-left:4px solid #2d7a3e;padding-left:12px">
+        <div style="font-size:13px;color:#555">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Issues Alert -->
+    <div id="issuesBox" style="display:none;margin-bottom:16px;padding:12px;background:#fff3cd;border-left:4px solid #ff9800;border-radius:6px">
+      <div style="font-weight:bold;margin-bottom:8px">⚠️ Issues Detected:</div>
+      <div id="issuesList" style="font-size:13px;color:#555"></div>
+    </div>
+
+    <!-- Device Info -->
+    <div style="padding:10px;background:#f0f0f0;border-radius:6px;margin-bottom:12px">
+      <div class="kv"><strong>Device:</strong> <span id="devSerial">-</span></div>
+    </div>
+  </div>
+
+</script>
+<script>
+function applyInit(init){
+  if(!init){ document.getElementById('statusLine').textContent = 'Loading status…'; return; }
+  if(init.has_device){
+    document.getElementById('statusLine').textContent = '✓ IoT Device Active on your farm';
+    document.getElementById('applyCard').style.display='none';
+    document.getElementById('monitorCard').style.display='block';
+    document.getElementById('devSerial').textContent = init.device && init.device.serial ? init.device.serial : '-';
+    if(init.device && init.device.installed_at){ 
+      document.getElementById('lastUpdate').textContent = new Date(init.device.installed_at).toLocaleString(); 
+    }
+  } else {
+    document.getElementById('statusLine').textContent = 'No device installed yet.';
+    document.getElementById('applyCard').style.display='block';
+    document.getElementById('monitorCard').style.display='none';
+    if(init.last_request){ document.getElementById('applyResult').textContent = 'Last request: '+init.last_request.status; }
+  }
+}
+
+document.getElementById('applyBtn').addEventListener('click', async ()=>{
+  const notes = document.getElementById('applyNotes').value;
+  const res = await fetch('/field-monitoring/api/apply', {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({notes})});
+  const j = await res.json();
+  if(j.success){ document.getElementById('applyResult').textContent = 'Application submitted!'; loadStatus(); }
+});
+
+function renderFieldStatus(fieldStatus){
+  if(!fieldStatus) return;
+  
+  // Update status badge
+  const statusCircle = document.getElementById('statusCircle');
+  const statusText = document.getElementById('statusText');
+  statusCircle.style.background = fieldStatus.status_color;
+  statusText.textContent = fieldStatus.overall_status;
+  
+  // Update metrics
+  const metrics = fieldStatus.metrics || {};
+  document.getElementById('tempVal').textContent = metrics.temperature || '-';
+  document.getElementById('humVal').textContent = metrics.humidity || '-';
+  document.getElementById('soilVal').textContent = metrics.soil_moisture || '-';
+  document.getElementById('lightVal').textContent = metrics.light || '-';
+  
+  // Update recommendations
+  const recList = document.getElementById('recommendationsList');
+  if(fieldStatus.recommendations && fieldStatus.recommendations.length > 0){
+    recList.innerHTML = fieldStatus.recommendations.map(r => `<div style="margin-bottom:6px;font-size:13px">${r}</div>`).join('');
+  } else {
+    recList.innerHTML = '<div style="font-size:13px;color:#666">No specific recommendations at this time.</div>';
+  }
+  
+  // Show/hide issues
+  const issuesBox = document.getElementById('issuesBox');
+  const issuesList = document.getElementById('issuesList');
+  if(fieldStatus.issues && fieldStatus.issues.length > 0){
+    issuesBox.style.display = 'block';
+    issuesList.innerHTML = fieldStatus.issues.map(i => `<div style="margin-bottom:4px">• ${i}</div>`).join('');
+  } else {
+    issuesBox.style.display = 'none';
+  }
+}
+
+async function loadStatus(){
+  // try client fetch (fresh) first; fallback to server-provided init
+  try{
+    const res = await fetch('/field-monitoring/api/status', {credentials:'same-origin'});
+    if(res.ok){
+      const j = await res.json();
+      if(!j.error && j.has_device){
+        applyInit(j);
+      } else {
+        applyInit(j);
+      }
+      return;
+    }
+  } catch(e){ console.warn('status fetch failed', e); }
+  // fallback to server init
+  if(window.FM_INIT){ applyInit(window.FM_INIT); }
+}
+
+async function loadReadings(){
+  try{
+    const res = await fetch('/field-monitoring/api/readings', {credentials:'same-origin'});
+    const j = await res.json();
+    if(j.error){ console.error(j); return; }
+    if(j.field_status){ renderFieldStatus(j.field_status); }
+    const latestReading = j.readings && j.readings.length > 0 ? j.readings[j.readings.length-1] : null;
+    if(latestReading){ document.getElementById('lastUpdate').textContent = new Date(latestReading.received_at).toLocaleString(); }
+  } catch(e){ console.warn('readings fetch failed'); }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadReadings);
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  if(window.FM_INIT){ applyInit(window.FM_INIT); }
+  // still attempt to load fresh status
+  loadStatus();
+});
+</script>
+</body>
+</html>

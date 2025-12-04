@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Profit Simulator - TelhanSathi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body{font-family:Segoe UI,Arial;background:#f5f7fa;color:#222;padding:20px}
+        .card{background:#fff;padding:20px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:16px}
+        h2{margin:0 0 8px 0;font-size:18px}
+        h3{margin:0 0 12px 0;font-size:15px;color:#444}
+        .row{display:flex;gap:12px;margin-bottom:12px;align-items:flex-end}
+        .col{flex:1}
+        label{font-size:12px;color:#666;display:block;margin-bottom:4px}
+        input, select{width:100%;padding:10px;border-radius:6px;border:1px solid #ddd;font-size:13px}
+        .slider{height:6px}
+        .btn{padding:12px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+        .btn-primary{background:#2d7a3e;color:#fff}
+        .btn-secondary{background:#fff;border:1px solid #2d7a3e;color:#2d7a3e}
+        .btn:hover{opacity:0.9}
+        .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .result-box{background:#f9f9f9;padding:14px;border-radius:8px;text-align:center;border-left:4px solid #2d7a3e}
+        .result-value{font-size:20px;font-weight:bold;color:#2d7a3e}
+        .result-label{font-size:12px;color:#666;margin-top:4px}
+        .chart-container{position:relative;height:280px;margin:20px 0}
+        #summary-line{font-size:13px;color:#666}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🌾 Oilseed Profit Simulator</h2>
+        <div id="summary-line">Loading your farm data…</div>
+    </div>
+
+    <!-- Input Section -->
+    <div class="card">
+        <h3>Select Oilseed & Parameters</h3>
+        <div class="row">
+            <div class="col">
+                <label>Oilseed Crop</label>
+                <select id="cropName"></select>
+            </div>
+            <div class="col">
+                <label>Area (Acres)</label>
+                <input id="areaAcres" type="number" min="0.1" max="100" step="0.1" value="1">
+            </div>
+            <div class="col">
+                <label>Harvest Month</label>
+                <select id="harvestMonth"></select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+        <h3>📊 Profit Projection</h3>
+        <div class="result-grid">
+            <div class="result-box" style="border-left-color:#f1c40f">
+                <div class="result-value" id="yieldVal">-</div>
+                <div class="result-label">Yield per Acre (Qtl)</div>
+            </div>
+            <div class="result-box" style="border-left-color:#e74c3c">
+                <div class="result-value" id="priceVal">-</div>
+                <div class="result-label">Market Price (₹/Qtl)</div>
+            </div>
+            <div class="result-box" style="border-left-color:#9b59b6">
+                <div class="result-value" id="costVal">-</div>
+                <div class="result-label">Total Input Cost (₹)</div>
+            </div>
+            <div class="result-box" style="border-left-color:#3498db">
+                <div class="result-value" id="incomeVal">-</div>
+                <div class="result-label">Gross Income (₹)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card">
+        <h3>💹 Profit Breakdown</h3>
+        <div class="chart-container">
+            <canvas id="profitChart"></canvas>
+        </div>
+        <div style="text-align:center;margin-top:12px">
+            <div style="font-size:20px;font-weight:bold;color:#27ae60" id="netProfitDisplay">₹ -</div>
+            <div style="font-size:12px;color:#666">Net Profit</div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="card">
+        <div style="display:flex;gap:12px">
+            <button class="btn btn-primary" id="applySubsidy" style="flex:1">Apply for Subsidy</button>
+            <button class="btn btn-secondary" id="findBuyer" style="flex:1">Find Buyer</button>
+        </div>
+    </div>
+
+    <script>
+    let farmer = null;
+    let oilseedsList = [];
+    let harvestMonths = [];
+    let chart = null;
+
+    async function init() {
+        try {
+            const res = await fetch('/profit/api/init', {credentials: 'same-origin'});
+            const data = await res.json();
+            if (data.error) { 
+                document.getElementById('summary-line').textContent = 'Error: ' + data.error; 
+                return; 
+            }
+            
+            farmer = data.farmer;
+            oilseedsList = data.oilseeds_list || [];
+            harvestMonths = data.harvest_months || [];
+
+            // Update summary
+            document.getElementById('summary-line').textContent = 
+                `Farm: ${farmer.name} | District: ${farmer.district} | Soil: ${farmer.soil_type || 'N/A'} | Water: ${farmer.water_type || 'N/A'}`;
+
+            // Populate crop dropdown
+            const cropSel = document.getElementById('cropName');
+            oilseedsList.forEach(crop => {
+                const opt = document.createElement('option');
+                opt.value = crop;
+                opt.textContent = crop;
+                cropSel.appendChild(opt);
+            });
+            cropSel.value = farmer.current_crop || (oilseedsList[0] || 'Mustard');
+
+            // Populate harvest month dropdown
+            const harvestSel = document.getElementById('harvestMonth');
+            harvestMonths.forEach(month => {
+                const opt = document.createElement('option');
+                opt.value = month;
+                opt.textContent = month;
+                harvestSel.appendChild(opt);
+            });
+            harvestSel.value = farmer.harvest_month || 'October';
+
+            // Set area from farmer data
+            document.getElementById('areaAcres').value = farmer.area_in_acres || 1;
+
+            // Event listeners
+            document.getElementById('cropName').addEventListener('change', simulate);
+            document.getElementById('areaAcres').addEventListener('change', simulate);
+            document.getElementById('harvestMonth').addEventListener('change', simulate);
+            
+            document.getElementById('applySubsidy').addEventListener('click', () => {
+                window.location.href = '/subsidies/list';
+            });
+            document.getElementById('findBuyer').addEventListener('click', () => {
+                const crop = document.getElementById('cropName').value;
+                window.location.href = `/market/nearby/${crop}`;
+            });
+
+            // Init chart
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {labels: [], datasets: []},
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {beginAtZero: true, ticks: {callback: (v) => '₹' + (v/1000).toFixed(1) + 'K'}}
+                    },
+                    plugins: {legend: {position: 'top'}}
+                }
+            });
+
+            simulate();
+        } catch (e) {
+            document.getElementById('summary-line').textContent = 'Error loading farm data: ' + e.message;
+        }
+    }
+
+    async function simulate() {
+        try {
+            const cropName = document.getElementById('cropName').value;
+            const areaAcres = parseFloat(document.getElementById('areaAcres').value || 1);
+            const harvestMonth = document.getElementById('harvestMonth').value;
+
+            const payload = {
+                crop_name: cropName,
+                state: farmer.state || 'Maharashtra',
+                market_district: farmer.district || '',
+                harvest_month: harvestMonth,
+                soil_type: farmer.soil_type || '',
+                water_type: farmer.water_type || 'Freshwater',
+                area_in_acres: areaAcres
+            };
+
+            const res = await fetch('/profit/api/simulate', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            const out = await res.json();
+            if (out.error) {
+                console.error('Simulation error:', out);
+                return;
+            }
+
+            const pred = out.prediction;
+
+            // Update result boxes
+            document.getElementById('yieldVal').textContent = pred.yield_per_acre.toFixed(2);
+            document.getElementById('priceVal').textContent = '₹ ' + pred.price_per_quintal.toLocaleString();
+            document.getElementById('costVal').textContent = '₹ ' + Math.round(pred.input_cost).toLocaleString();
+            document.getElementById('incomeVal').textContent = '₹ ' + Math.round(pred.gross_income).toLocaleString();
+            document.getElementById('netProfitDisplay').textContent = '₹ ' + Math.round(pred.net_profit).toLocaleString();
+
+            // Update bar chart: Cost, Gross Income, Net Profit
+            chart.data.labels = [cropName];
+            chart.data.datasets = [
+                {
+                    label: 'Input Cost',
+                    data: [pred.input_cost],
+                    backgroundColor: '#e74c3c'
+                },
+                {
+                    label: 'Gross Income',
+                    data: [pred.gross_income],
+                    backgroundColor: '#3498db'
+                },
+                {
+                    label: 'Net Profit',
+                    data: [pred.net_profit],
+                    backgroundColor: '#27ae60'
+                }
+            ];
+            chart.update();
+        } catch (e) {
+            console.error('Simulate error:', e);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

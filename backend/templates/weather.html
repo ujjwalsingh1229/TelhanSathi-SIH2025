@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Weather Forecast</title>
+  <style>
+    body{font-family:Segoe UI,Arial;padding:16px;background:#f5f7fa}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:14px}
+    .forecast-grid{display:flex;gap:8px;flex-wrap:wrap}
+    .day{background:#fff;padding:12px;border-radius:8px;min-width:130px;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    .kv{font-size:13px;color:#555}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>7-day Weather Forecast</h2>
+    <div id="locationLine">Loading…</div>
+  </div>
+
+  <div id="forecastCard" class="card">
+    <div class="forecast-grid" id="forecastGrid"></div>
+  </div>
+
+<script>
+async function loadForecast(){
+  const res = await fetch('/weather/api/forecast', {credentials:'same-origin'});
+  if(!res.ok){
+    document.getElementById('locationLine').textContent = 'Could not load forecast.';
+    return;
+  }
+  const j = await res.json();
+  document.getElementById('locationLine').textContent = 'Location: '+(j.location||'your area');
+  const grid = document.getElementById('forecastGrid');
+  grid.innerHTML='';
+  for(const d of j.forecast){
+    const el = document.createElement('div'); el.className='day';
+    el.innerHTML = `<div><strong>${new Date(d.date).toLocaleDateString()}</strong></div>
+                    <div class="kv">${d.summary}</div>
+                    <div class="kv">${d.temp_min}°C — ${d.temp_max}°C</div>
+                    <div class="kv">Precip: ${d.precip_mm} mm</div>
+                    <div class="kv">Wind: ${d.wind_kmh} km/h</div>`;
+    grid.appendChild(el);
+  }
+}
+window.addEventListener('DOMContentLoaded', loadForecast);
+</script>
+</body>
+</html>

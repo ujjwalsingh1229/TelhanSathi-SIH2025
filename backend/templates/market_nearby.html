@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ crop }} Prices</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: #1e3a24;
+            background: linear-gradient(180deg, #2d5735 0%, #1e3a24 100%);
+        }
+
+        .frame {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            background-color: #f7f9f7;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            padding: 15px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-left: 10px;
+            color: #333;
+        }
+
+        .page-info {
+            padding: 15px;
+            background: #fff;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .buyer-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 0 15px 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .price-card {
+            background: #fff;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        .main-price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e3a24;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="frame">
+
+    <div class="header">
+        <svg onclick="history.back()" width="24" height="24" fill="#333">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
+        </svg>
+        <div class="header-title">Market Prices</div>
+    </div>
+
+    <div class="page-info">
+        <div style="display:flex;align-items:center;">Live Prices</div>
+        <span>{{ now().strftime("%d %b %Y") }}</span>
+    </div>
+
+    <div class="main-content" style="overflow-y:auto; height:100%; padding-bottom:30px;">
+
+        <!-- Main Price Card -->
+        <div class="price-card" id="avg-price-card" style="cursor: pointer;">
+            <h3 style="margin:0; color:#666;">Selected Crop</h3>
+            <h2 style="margin:5px 0 15px; font-size:22px;">{{ crop }}</h2>
+
+            <div class="main-price">
+                {% if avg_price %}
+                    ₹{{ avg_price }} <small style="font-size:15px;">/ Quintal</small>
+                {% else %}
+                    <span style="color:#999;">N/A</span>
+                {% endif %}
+            </div>
+            <p style="font-size:12px; color:green;">Updated today • Avg market rate</p>
+        </div>
+
+        <div style="font-size:16px; font-weight:bold; margin:20px 15px 5px;">
+            Nearby Buyers
+        </div>
+
+        {% for p in prices %}
+        <div class="buyer-card" style="cursor: pointer;" onclick="goToDealReview('{{ crop }}', {{ p.price if p.price else p['price'] }})">
+            <div>
+                <div style="font-weight:bold; font-size:14px;">{{ p.buyer_name if p.buyer_name else p["buyer_name"] }}</div>
+                <div style="font-size:12px; color:#777;">{{ p.distance_km if p.distance_km else p["distance_km"] }} km away</div>
+            </div>
+
+            <div style="font-size:18px; font-weight:bold; color:#e64a19;">
+                ₹{{ p.price if p.price else p["price"] }}
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Handle average price card click
+        const avgPriceCard = document.getElementById('avg-price-card');
+        if (avgPriceCard) {
+            avgPriceCard.addEventListener('click', () => {
+                goToDealReview('{{ crop }}', {{ avg_price if avg_price else 0 }});
+            });
+        }
+    });
+
+    function goToDealReview(crop, price) {
+        // Navigate to deal review page with crop name
+        window.location.href = `/market/deal-review?crop=${encodeURIComponent(crop)}&price=${price}`;
+    }
+</script>
+
+</body>
+</html>

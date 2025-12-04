@@ -156,7 +156,8 @@ def profile():
         session.clear()
         return redirect(url_for('auth.login'))
     
-    return render_template('profile.html', farmer=farmer)
+    return render_template('profile.html', farmer=farmer.to_dict())
+
 
 
 @auth_bp.route('/continue-to-dashboard', methods=['POST'])
@@ -203,3 +204,44 @@ def resend_otp():
 def register():
     """Serve registration page (placeholder)"""
     return render_template('register.html')
+
+
+@auth_bp.route('/logout')
+def logout():
+    """Clear session and log the user out"""
+    session.clear()
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/api/me', methods=['GET'])
+def api_current_farmer():
+    """Return current logged-in farmer info as JSON (protected)"""
+    if 'farmer_id_verified' not in session:
+        return jsonify({'error': 'Unauthorized', 'status': 401}), 401
+    farmer_id = session.get('farmer_id_verified')
+    farmer = Farmer.query.filter_by(id=farmer_id).first()
+    if not farmer:
+        return jsonify({'error': 'Farmer not found', 'status': 404}), 404
+    return jsonify({
+        'id': farmer.id,
+        'name': farmer.name,
+        'farmer_id': farmer.farmer_id,
+        'phone': farmer.phone_number,
+        'email': farmer.email,
+        'village': farmer.village,
+        'taluka': farmer.taluka,
+        'district': farmer.district,
+        'state': farmer.state,
+        'total_land_area_hectares': farmer.total_land_area_hectares,
+        'land_type': farmer.soil_type,
+        'current_crops': farmer.current_crops,
+        'water_type': farmer.water_type,
+        'bank_name': farmer.bank_name,
+        'bank_account_number': farmer.account_number,
+        'ifsc_code': farmer.ifsc_code,
+        'aadhar_number': farmer.aadhaar_number,
+        'is_verified': farmer.is_verified,
+        'photo_url': None,
+        'date_of_birth': farmer.date_of_birth.isoformat() if farmer.date_of_birth else None,
+        'gender': farmer.gender
+    })

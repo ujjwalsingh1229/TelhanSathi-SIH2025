@@ -26,7 +26,7 @@ def onboarding():
         'acres': round(farmer.total_land_area_hectares * 2.471054, 1)
                   if farmer and farmer.total_land_area_hectares else 2,
         'district': farmer.district if farmer and farmer.district else '',
-        'irrigation': farmer.irrigation_type if farmer and farmer.irrigation_type else '',
+        'water_type': farmer.water_type if farmer and farmer.water_type else '',
         'soil': farmer.soil_type if farmer and farmer.soil_type else '',
         'harvest_date': farmer.harvest_date.strftime("%Y-%m") 
                         if farmer and farmer.harvest_date else ''
@@ -47,7 +47,7 @@ def onboarding_post():
     acres = request.form.get('acres', '').strip()
     district = request.form.get('district', '').strip()
     harvest_date = request.form.get('harvest_date', '').strip()
-    irrigation = request.form.get('irrigation', '').strip()
+    water_type = request.form.get('water_type', '').strip()
     soil = request.form.get('soil', '').strip()
 
     # Ensure acres is numeric
@@ -79,8 +79,8 @@ def onboarding_post():
         if district:
             farmer.district = district
 
-        if irrigation:
-            farmer.irrigation_type = irrigation
+        if water_type:
+            farmer.water_type = water_type
 
         if soil:
             farmer.soil_type = soil
@@ -96,7 +96,7 @@ def onboarding_post():
         'crop': crop,
         'acres': acres_float,
         'district': district,
-        'irrigation': irrigation,
+        'water_type': water_type,
         'soil': soil,
         'harvest_date': harvest_date
     }

@@ -51,6 +51,14 @@
             display: flex;
             align-items: center;
             cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, opacity 0.2s;
+        }
+
+        .header-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            opacity: 0.9;
         }
 
         .header-title {
@@ -64,6 +72,90 @@
             width: 24px;
             height: 24px;
             fill: #fff;
+        }
+        /* Profile slider styles */
+        .profile-slider-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            z-index: 9999;
+            transition: opacity 0.25s ease;
+        }
+
+        .profile-slider {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 300px;
+            height: 100%;
+            background: #fff;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+            z-index: 10000;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: left 0.28s cubic-bezier(.2,.8,.2,1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .profile-slider.open {
+            left: 0;
+        }
+
+        .profile-slider .profile-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-slider .profile-pic {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#d8e6f1,#fff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #388e3c;
+        }
+
+        .profile-slider .profile-name {
+            font-weight: 700;
+            color: #222;
+            font-size: 16px;
+        }
+
+        .profile-slider .profile-sub {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .profile-slider .btn {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-view-profile {
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: #fff;
+            width: 100%;
+        }
+
+        .btn-logout {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            color: #dc3545;
+            width: 100%;
         }
         
         /* SCROLLABLE MAIN CONTENT AREA */
@@ -129,6 +221,12 @@
             border-radius: 12px;
             padding: 10px 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.12);
         }
 
         /* Grid area assignments */
@@ -331,7 +429,7 @@
                 </svg>
             </div>
             <div class="header-title">Telhan Sathi</div>
-            <div class="header-item">
+            <div class="header-item" onclick="window.location.href='/notifications/list'" style="cursor: pointer; transition: opacity 0.2s;">
                 <!-- Notification Bell Icon -->
                 <svg class="icon-button" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z"/>
@@ -354,42 +452,57 @@
 
             <!-- 3. MAIN FEATURES (5 Icons) - COMPLEX GRID -->
             <div class="feature-grid">
+              <a href="{{ url_for('market.select_crop') }}">
                 <div class="feature-item">
                     <div class="feature-icon-wrapper">
                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                     </div>
                     Market place
                 </div>
+                </a>
+                <a href="{{ url_for('weather.dashboard') }}" style="display:block; text-decoration: none; color: inherit;">
                 <div class="feature-item">
                     <div class="feature-icon-wrapper">
                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v6h-2z"/></svg>
                     </div>
                     Weather Forecast
                 </div>
+                </a>
+                
+                <a href="{{ url_for('profit.simulator_page') }}" style="text-decoration: none; color: inherit;">
+                <div class="feature-item">
+                    <div class="feature-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.46 5.36 5.82 7.93 5.82 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                    </div>
+                    profit simulator
+                </div>
+                </a>
+
+                <a href="{{ url_for('subsidies.subsidies_list') }}" style="text-decoration: none; color: inherit;">
                 <div class="feature-item">
                     <div class="feature-icon-wrapper">
                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h-2V7h2v9zm4 0h-2V7h2v9z"/></svg>
                     </div>
                     Govt. Schemes
                 </div>
+                </a>
+                
+                <a href="{{ url_for('crop_economics.dashboard') }}" style="text-decoration: none; color: inherit;">
                 <div class="feature-item">
                     <div class="feature-icon-wrapper">
-                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 9.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5z"/></svg>
                     </div>
                     Crop Economics
                 </div>
+                </a>
+                <a href="{{ url_for('field_monitoring.dashboard') }}" style="text-decoration: none; color: inherit;">
                 <div class="feature-item">
                     <div class="feature-icon-wrapper">
-                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    </div>
-                    Profit simulator
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon-wrapper">
-                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L1 21h22L12 2zm0 4.96L17.7 18H6.3L12 6.96zM13 16h-2v-4h2v4zm0-6h-2V8h2v2z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L1 21h22L12 2zm0 4.96L17.7 18H6.3L12 6.96zM13 16h-2v-4h-2v4zm0-6h-2V8h2v2z"/></svg>
                     </div>
                     field monitoring
                 </div>
+                </a>
             </div>
 
             <!-- 4. BEST OFFER BLOCK -->
@@ -476,7 +589,8 @@
             // --- 2. Image Carousel Logic ---
             
             function updateCarousel() {
-                carouselTrack.style.transform = translateX(-${currentIndex * 100 / slideCount}%);
+                const pct = (currentIndex * 100) / slideCount;
+                carouselTrack.style.transform = `translateX(-${pct}%)`;
             }
 
             function nextSlide() {
@@ -509,13 +623,15 @@
                 const currentX = e.clientX;
                 const diff = startX - currentX;
                 // Move track based on mouse movement
-                carouselTrack.style.transform = translateX(calc(-${currentIndex * 100 / slideCount}% - ${diff}px));
+                const pctBase = (currentIndex * 100) / slideCount;
+                carouselTrack.style.transform = `translateX(calc(-${pctBase}% - ${diff}px))`;
             });
             carouselTrack.addEventListener('touchmove', (e) => {
                 if (!isSwiping) return;
                 const currentX = e.touches[0].clientX;
                 const diff = startX - currentX;
-                carouselTrack.style.transform = translateX(calc(-${currentIndex * 100 / slideCount}% - ${diff}px));
+                const pctBase = (currentIndex * 100) / slideCount;
+                carouselTrack.style.transform = `translateX(calc(-${pctBase}% - ${diff}px))`;
             });
 
             // Manual swipe end
@@ -623,6 +739,137 @@
                 setTimeout(() => modal.style.opacity = 1, 10);
             }
         });
+    </script>
+    <script>
+        // Profile slider: create DOM elements and wire interactions
+        (function(){
+            const headerItems = document.querySelectorAll('.header .header-item');
+            if (!headerItems || headerItems.length === 0) return;
+            const profileButton = headerItems[0]; // first header-item is profile icon
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'profile-slider-overlay';
+            document.body.appendChild(overlay);
+
+            // Create slider panel
+            const slider = document.createElement('div');
+            slider.className = 'profile-slider';
+            slider.innerHTML = `
+                <div class="profile-top">
+                    <div class="profile-pic" id="profile-pic">👤</div>
+                    <div style="flex:1;">
+                        <div class="profile-name" id="profile-name">Loading...</div>
+                        <div class="profile-sub" id="profile-sub"></div>
+                    </div>
+                </div>
+                <div id="profile-more" style="margin-top:8px; font-size:13px; color:#444;">&nbsp;</div>
+                <div style="margin-top:12px;">
+                    <button class="btn btn-view-profile" id="btn-view-profile">View Profile</button>
+                </div>
+                <div>
+                    <button class="btn btn-logout" id="btn-logout">Logout</button>
+                </div>
+            `;
+            document.body.appendChild(slider);
+
+            const nameEl = slider.querySelector('#profile-name');
+            const subEl = slider.querySelector('#profile-sub');
+            const picEl = slider.querySelector('#profile-pic');
+            const moreEl = slider.querySelector('#profile-more');
+            const btnView = slider.querySelector('#btn-view-profile');
+            const btnLogout = slider.querySelector('#btn-logout');
+
+            function openSlider() {
+                overlay.style.display = 'block';
+                // small delay for opacity transition if needed
+                setTimeout(() => overlay.style.opacity = '1', 10);
+                slider.classList.add('open');
+                fetchProfile();
+            }
+
+            function closeSlider() {
+                overlay.style.opacity = '0';
+                slider.classList.remove('open');
+                setTimeout(() => overlay.style.display = 'none', 250);
+            }
+
+            overlay.addEventListener('click', closeSlider);
+
+            // toggle on profile button click
+            profileButton.addEventListener('click', (e) => {
+                // Prevent navigating when clicking the SVG
+                e.preventDefault();
+                if (slider.classList.contains('open')) closeSlider(); else openSlider();
+            });
+
+            // Close on ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && slider.classList.contains('open')) closeSlider();
+            });
+
+            btnView.addEventListener('click', () => {
+                window.location.href = '/profile';
+            });
+
+            btnLogout.addEventListener('click', async () => {
+                try {
+                    // Call logout route (GET) then redirect to login
+                    window.location.href = '/logout';
+                } catch (err) {
+                    console.error('Logout failed', err);
+                    // Fallback: redirect anyway
+                    window.location.href = '/logout';
+                }
+            });
+
+            async function fetchProfile() {
+                try {
+                    const resp = await fetch('/api/me', { credentials: 'same-origin' });
+                    if (resp.status === 401) {
+                        // Not logged-in — redirect to login
+                        window.location.href = '/login';
+                        return;
+                    }
+                    if (!resp.ok) {
+                        console.warn('Failed to fetch profile', resp.status);
+                        nameEl.textContent = 'Not signed in';
+                        subEl.textContent = '';
+                        picEl.textContent = '👤';
+                        return;
+                    }
+                    const data = await resp.json();
+                    const farmer = data.farmer || data;
+                    const displayName = farmer.name || `${farmer.first_name || ''} ${farmer.last_name || ''}`.trim() || 'Farmer';
+                    nameEl.textContent = displayName;
+                    subEl.textContent = farmer.phone || farmer.email || '';
+                    moreEl.textContent = farmer.village ? `${farmer.village} • ${farmer.district || ''}` : '';
+
+                    // Profile picture: if server provides `photo_url`, use an <img>
+                    if (farmer.photo_url) {
+                        const img = document.createElement('img');
+                        img.src = farmer.photo_url;
+                        img.alt = displayName;
+                        img.style.width = '64px';
+                        img.style.height = '64px';
+                        img.style.borderRadius = '50%';
+                        img.style.objectFit = 'cover';
+                        picEl.innerHTML = '';
+                        picEl.appendChild(img);
+                    } else {
+                        // Show initials
+                        const initials = (displayName.split(' ').map(s => s[0]).slice(0,2).join('') || 'F').toUpperCase();
+                        picEl.textContent = initials;
+                    }
+                } catch (err) {
+                    console.error('Error fetching /api/me', err);
+                    nameEl.textContent = 'Unknown';
+                    subEl.textContent = '';
+                    picEl.textContent = '👤';
+                }
+            }
+
+        })();
     </script>
 </body>
 </html>
