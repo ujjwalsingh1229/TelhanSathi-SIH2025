@@ -1,23 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Crop to Sell</title>
+{% extends "base.html" %}
+
+{% block title %}Select Crop to Sell{% endblock %}
+
+{% block style %}
+
 
     <style>
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            color: #1e3a24;
-            background: linear-gradient(180deg, #2d5735 0%, #1e3a24 100%);
-        }
+
 
         .frame {
             width: 100%;
@@ -31,16 +20,7 @@
             position: relative;
         }
 
-        .header {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+  
 
         .header-title {
             font-size: 18px;
@@ -67,7 +47,7 @@
 
         .main-content {
             flex-grow: 1;
-            padding: 20px 15px;
+
             overflow-y: auto;
         }
 
@@ -122,17 +102,14 @@
         }
 
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
 
 <div class="frame">
 
-    <header class="header">
-        <svg onclick="history.back()" class="icon-button" width="24" height="24" fill="#333">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
-        </svg>
-        <div class="header-title">फसल बेचें</div>
-    </header>
+
+
 
     <div class="page-info">
         <div class="page-main-title">Select Oilseed to Sell</div>
@@ -156,7 +133,11 @@
     </div>
 
 </div>
+ {% endblock %}
 
+
+ 
+{% block script %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const items = document.querySelectorAll(".crop-item");
@@ -182,6 +163,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 </script>
-
-</body>
-</html>
+{% endblock %}

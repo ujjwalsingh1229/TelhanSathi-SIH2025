@@ -1,381 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications - TelhanSathi</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-            padding: 10px;
-        }
+{% block title %}Notifications - Telhan Sathi{% endblock %}
 
-        .container {
-            max-width: 420px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-
-        .header-info {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        /* Filter Tabs */
-        .filter-tabs {
-            display: flex;
-            gap: 0;
-            border-bottom: 1px solid #e0e0e0;
-            background: #fafafa;
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-            min-width: 70px;
-            transition: all 0.3s ease;
-        }
-
-        .tab-btn:hover {
-            color: #667eea;
-            background: white;
-        }
-
-        .tab-btn.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-            background: white;
-        }
-
-        /* Control Bar */
-        .control-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid #e0e0e0;
-            background: white;
-            gap: 8px;
-        }
-
-        .control-bar button {
-            background: none;
-            border: 1px solid #e0e0e0;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            color: #666;
-            transition: all 0.3s ease;
-        }
-
-        .control-bar button:hover {
-            background: #f5f5f5;
-            color: #333;
-        }
-
-        /* Notifications List */
-        .notifications-container {
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .notification-item {
-            padding: 16px;
-            border-bottom: 1px solid #e0e0e0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            gap: 12px;
-            position: relative;
-        }
-
-        .notification-item:hover {
-            background: #f9f9f9;
-        }
-
-        .notification-item.unread {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-        }
-
-        .notification-item.important {
-            border-left: 4px solid #ff6b6b;
-        }
-
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .notification-icon.success {
-            background: #d4edda;
-            color: #28a745;
-        }
-
-        .notification-icon.warning {
-            background: #fff3cd;
-            color: #ffc107;
-        }
-
-        .notification-icon.info {
-            background: #d1ecf1;
-            color: #17a2b8;
-        }
-
-        .notification-icon.error {
-            background: #f8d7da;
-            color: #dc3545;
-        }
-
-        .notification-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 6px;
-        }
-
-        .notification-title {
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-            flex: 1;
-        }
-
-        .notification-time {
-            font-size: 12px;
-            color: #999;
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-
-        .notification-description {
-            font-size: 13px;
-            color: #666;
-            line-height: 1.4;
-            margin-bottom: 8px;
-        }
-
-        .notification-badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .notification-badge.scheme {
-            background: #d4edda;
-            color: #28a745;
-        }
-
-        .notification-badge.deal {
-            background: #d1ecf1;
-            color: #17a2b8;
-        }
-
-        .notification-badge.price {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .notification-delete {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 18px;
-            padding: 4px;
-            display: none;
-            transition: color 0.2s;
-        }
-
-        .notification-item:hover .notification-delete {
-            display: block;
-        }
-
-        .notification-delete:hover {
-            color: #dc3545;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-state p {
-            font-size: 14px;
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Footer */
-        .footer {
-            padding: 16px;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 8px;
-        }
-
-        .footer button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-back:hover {
-            background: #e0e0e0;
-        }
-
-        .btn-clear {
-            background: #fff;
-            color: #dc3545;
-            border: 1px solid #dc3545;
-        }
-
-        .btn-clear:hover {
-            background: #ffe5e5;
-        }
-
-        /* Pagination */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .pagination button {
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            color: #333;
-            transition: all 0.2s;
-        }
-
-        .pagination button:hover:not(:disabled) {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .pagination-info {
-            font-size: 12px;
-            color: #999;
-        }
-
-        /* Responsive */
-        @media (max-width: 420px) {
-            .container {
-                border-radius: 0;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
+{% block content %}
         <!-- Header -->
-        <div class="header">
-            <h1>📬 Notifications</h1>
-            <div class="header-info">
-                <span id="unread-count">0</span> new notifications
+        <header class="notif-header">
+            <div class="header-item">
+                <div class="header-title">Notifications</div>
             </div>
-        </div>
+        </header>
 
         <!-- Filter Tabs -->
         <div class="filter-tabs">
@@ -392,30 +25,392 @@
             <span style="font-size: 12px; color: #999;" id="notification-count">Loading...</span>
         </div>
 
-        <!-- Notifications List -->
-        <div class="notifications-container" id="notifications-list">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>Loading notifications...</p>
+        <!-- Main Scrollable Content -->
+        <div class="main-content">
+            <!-- Notifications List -->
+            <div class="notifications-container" id="notifications-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading notifications...</p>
+                </div>
             </div>
         </div>
 
-        <!-- Pagination -->
-        <div class="pagination" id="pagination-container" style="display: none;">
-            <button id="prev-btn" onclick="previousPage()" disabled>← Previous</button>
-            <span class="pagination-info">
-                Page <span id="current-page">1</span> of <span id="total-pages">1</span>
-            </span>
-            <button id="next-btn" onclick="nextPage()" disabled>Next →</button>
-        </div>
+        <style>
+            .notif-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px;
+                background-color: #8e3888ff;
+                color: white;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                flex-shrink: 0;
+            }
 
-        <!-- Footer -->
-        <div class="footer">
-            <button class="btn-back" onclick="window.location.href='/dashboard'">← Back</button>
-            <button class="btn-clear" onclick="clearAll()">Clear All</button>
-        </div>
-    </div>
+            .header-item {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+            }
 
+            .header-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin-left: 10px;
+            }
+
+            .icon-button {
+                width: 24px;
+                height: 24px;
+                fill: white;
+                cursor: pointer;
+            }
+
+            /* Filter Tabs - Fixed at top */
+            .filter-tabs {
+                display: flex;
+                gap: 0;
+                border-bottom: 1px solid #e0e0e0;
+                background: #fafafa;
+                overflow-x: auto;
+                padding: 0 10px;
+                flex-shrink: 0;
+                z-index: 50;
+            }
+
+            .tab-btn {
+                flex: 1;
+                padding: 12px 10px;
+                border: none;
+                background: none;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 500;
+                color: #666;
+                border-bottom: 3px solid transparent;
+                white-space: nowrap;
+                min-width: 70px;
+                transition: all 0.3s ease;
+            }
+
+            .tab-btn:hover {
+                color: #388e3c;
+                background: white;
+            }
+
+            .tab-btn.active {
+                color: #388e3c;
+                border-bottom-color: #388e3c;
+                background: white;
+            }
+
+            /* Control Bar - Fixed below tabs */
+            .control-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 15px;
+                border-bottom: 1px solid #e0e0e0;
+                background: white;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+
+            .control-bar button {
+                background: none;
+                border: 1px solid #e0e0e0;
+                padding: 6px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 12px;
+                color: #666;
+                transition: all 0.3s ease;
+            }
+
+            .control-bar button:hover {
+                background: #f5f5f5;
+                color: #388e3c;
+                border-color: #388e3c;
+            }
+
+            /* Main scrollable content */
+            .main-content {
+                flex: 1;
+                overflow-y: auto;
+                overflow-x: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Notifications List */
+            .notifications-container {
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .notification-item {
+                padding: 15px;
+                border-bottom: 1px solid #e0e0e0;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                gap: 12px;
+                position: relative;
+                background: white;
+                overflow: hidden;
+            }
+
+            .notification-item-content {
+                display: flex;
+                gap: 12px;
+                width: 100%;
+                transition: transform 0.3s ease;
+            }
+
+            .notification-item.swiping .notification-item-content {
+                transform: translateX(var(--swipe-offset));
+            }
+
+            .notification-item-delete-action {
+                position: absolute;
+                right: -60px;
+                top: 0;
+                width: 60px;
+                height: 100%;
+                background: #dc3545;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+                transition: right 0.3s ease;
+            }
+
+            .notification-item.swiped .notification-item-delete-action {
+                right: 0;
+            }
+
+            .notification-item:hover {
+                background: #f9f9f9;
+            }
+
+            .notification-item.unread {
+                background: #f1f8f5;
+                border-left: 4px solid #388e3c;
+            }
+
+            .notification-item.important {
+                border-left: 4px solid #ff6b6b;
+            }
+
+            .notification-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                flex-shrink: 0;
+            }
+
+            .notification-icon.success {
+                background: #c8e6c9;
+                color: #2e7d32;
+            }
+
+            .notification-icon.warning {
+                background: #fff9c4;
+                color: #f57f17;
+            }
+
+            .notification-icon.info {
+                background: #b3e5fc;
+                color: #01579b;
+            }
+
+            .notification-icon.error {
+                background: #ffcdd2;
+                color: #c62828;
+            }
+
+            .notification-content {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .notification-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 6px;
+            }
+
+            .notification-title {
+                font-weight: 600;
+                color: #333;
+                font-size: 14px;
+                flex: 1;
+            }
+
+            .notification-time {
+                font-size: 12px;
+                color: #999;
+                flex-shrink: 0;
+                margin-left: 8px;
+            }
+
+            .notification-description {
+                font-size: 13px;
+                color: #666;
+                line-height: 1.4;
+                margin-bottom: 8px;
+            }
+
+            .notification-badge {
+                display: inline-block;
+                font-size: 11px;
+                padding: 2px 8px;
+                border-radius: 12px;
+                background: #e0e0e0;
+                color: #333;
+            }
+
+            .notification-badge.scheme {
+                background: #c8e6c9;
+                color: #2e7d32;
+            }
+
+            .notification-badge.deal {
+                background: #b3e5fc;
+                color: #01579b;
+            }
+
+            .notification-badge.price {
+                background: #fff9c4;
+                color: #f57f17;
+            }
+
+            /* Empty State */
+            .empty-state {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 300px;
+                text-align: center;
+            }
+
+            .empty-state-icon {
+                font-size: 48px;
+                margin-bottom: 16px;
+                opacity: 0.5;
+            }
+
+            .empty-state p {
+                font-size: 14px;
+                color: #999;
+            }
+
+            /* Loading */
+            .loading {
+                text-align: center;
+                padding: 40px 20px;
+                color: #999;
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #388e3c;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @keyframes slideOut {
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+
+            /* Pagination - Fixed at bottom */
+            .pagination {
+                display: none;
+            }
+
+            .pagination button {
+                background: #f0f0f0;
+                border: 1px solid #ddd;
+                padding: 6px 10px
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                color: #333;
+                transition: all 0.2s;
+            }
+
+            .pagination button:hover:not(:disabled) {
+                background: #388e3c;
+                color: white;
+                border-color: #388e3c;
+            }
+
+            .pagination button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .pagination-info {
+                font-size: 12px;
+                color: #999;
+            }
+
+            /* Footer */
+            .notif-footer {
+                display: none;
+            }
+
+            .notif-footer button {
+                flex: 1;
+                padding: 10px
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+            }
+
+            .btn-clear {
+                background: #fff;
+                color: #388e3c;
+                border: 1px solid #388e3c;
+            }
+
+            .btn-clear:hover {
+                background: #f1f8f5;
+                border-color: #2e7d32;
+                color: #2e7d32;
+            }
+        </style>
+    
+
+{% endblock %}
+
+{% block script %}
     <script>
         let currentPage = 1;
         let currentFilter = 'all';
@@ -475,7 +470,6 @@
                 // Update pagination
                 totalPages = data.pages || 1;
                 currentPage = page;
-                updatePagination();
                 document.getElementById('notification-count').textContent = `${data.total || 0} total`;
 
                 getUnreadCount();
@@ -501,20 +495,25 @@
                 const badge = getNotificationBadge(notif.relatedType);
 
                 html += `
-                    <div class="notification-item ${unreadClass} ${importantClass}" 
-                         onclick="goToNotification('${notif.id}', '${notif.actionLink || ''}')">
-                        <div class="notification-icon ${typeColor}">
-                            ${getNotificationIcon(notif.type)}
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-header">
-                                <div class="notification-title">${escapeHtml(notif.title)}</div>
-                                <div class="notification-time">${timeAgo}</div>
+                    <div class="notification-item" id="notif-${notif.id}" data-notif-id="${notif.id}">
+                        <div class="notification-item-content" 
+                             onmousedown="startSwipe(event, '${notif.id}')"
+                             ontouchstart="startSwipe(event, '${notif.id}')">
+                            <div class="notification-icon ${typeColor}">
+                                ${getNotificationIcon(notif.type)}
                             </div>
-                            <div class="notification-description">${escapeHtml(notif.description)}</div>
-                            ${badge ? `<span class="notification-badge ${notif.relatedType}">${badge}</span>` : ''}
+                            <div class="notification-content" 
+                                 onclick="goToNotification('${notif.id}', '${notif.actionLink || ''}')">
+                                <div class="notification-header">
+                                    <div class="notification-title">${escapeHtml(notif.title)}</div>
+                                    <div class="notification-time">${timeAgo}</div>
+                                </div>
+                                <div class="notification-description">${escapeHtml(notif.description)}</div>
+                                ${badge ? `<span class="notification-badge ${notif.relatedType}">${badge}</span>` : ''}
+                            </div>
                         </div>
-                        <button class="notification-delete" onclick="event.stopPropagation(); deleteNotification('${notif.id}')">✕</button>
+                        <div class="notification-item-delete-action" 
+                             onclick="deleteNotificationWithSwipe('${notif.id}')">🗑️</div>
                     </div>
                 `;
             });
@@ -574,8 +573,10 @@
 
         // Go to notification detail
         function goToNotification(id, actionLink) {
-            if (actionLink) {
-                window.location.href = actionLink;
+            // Always open the notification details page
+            // Pass actionLink as query parameter if it exists
+            if (actionLink && actionLink.trim()) {
+                window.location.href = `/notifications/detail/${id}?link=${encodeURIComponent(actionLink)}`;
             } else {
                 window.location.href = `/notifications/detail/${id}`;
             }
@@ -591,6 +592,110 @@
             } catch (err) {
                 console.error('Error deleting notification:', err);
             }
+        }
+
+        // Delete notification with swipe
+        async function deleteNotificationWithSwipe(id) {
+            try {
+                const res = await fetch(`/notifications/api/delete/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+                if (res.ok) {
+                    const element = document.getElementById(`notif-${id}`);
+                    if (element) {
+                        element.style.animation = 'slideOut 0.3s ease forwards';
+                        setTimeout(() => {
+                            loadNotifications(currentPage);
+                        }, 300);
+                    }
+                }
+            } catch (err) {
+                console.error('Error deleting notification:', err);
+            }
+        }
+
+        // Swipe handling
+        let swipeData = {};
+
+        function startSwipe(e, notifId) {
+            // Don't start swipe if clicking on content
+            if (e.target.closest('.notification-content')) {
+                return;
+            }
+
+            const item = document.getElementById(`notif-${notifId}`);
+            const startX = e.type?.includes('touch') ? e.touches?.[0]?.clientX : e.clientX;
+            const startY = e.type?.includes('touch') ? e.touches?.[0]?.clientY : e.clientY;
+
+            swipeData[notifId] = {
+                startX: startX,
+                startY: startY,
+                currentX: startX,
+                item: item,
+                moved: false
+            };
+
+            const moveHandler = (moveEvent) => handleSwipeMove(moveEvent, notifId);
+            const endHandler = (endEvent) => handleSwipeEnd(endEvent, notifId, moveHandler, endHandler);
+
+            if (e.type?.includes('touch')) {
+                document.addEventListener('touchmove', moveHandler, { passive: false });
+                document.addEventListener('touchend', endHandler, { passive: false });
+                document.addEventListener('touchcancel', endHandler);
+            } else {
+                document.addEventListener('mousemove', moveHandler);
+                document.addEventListener('mouseup', endHandler);
+            }
+
+            swipeData[notifId].moveHandler = moveHandler;
+            swipeData[notifId].endHandler = endHandler;
+        }
+
+        function handleSwipeMove(e, notifId) {
+            if (!swipeData[notifId]) return;
+
+            const currentX = e.type?.includes('touch') ? e.touches?.[0]?.clientX : e.clientX;
+            const diff = currentX - swipeData[notifId].startX;
+
+            // Only register as moved if moved significantly
+            if (Math.abs(diff) > 5) {
+                e.preventDefault?.();
+                swipeData[notifId].moved = true;
+                swipeData[notifId].currentX = currentX;
+                const offset = Math.min(Math.max(diff, -80), 0); // Limit to -80 to 0
+                swipeData[notifId].item.classList.add('swiping');
+                swipeData[notifId].item.style.setProperty('--swipe-offset', `${offset}px`);
+            }
+        }
+
+        function handleSwipeEnd(e, notifId, moveHandler, endHandler) {
+            if (!swipeData[notifId]) return;
+
+            const diff = swipeData[notifId].currentX - swipeData[notifId].startX;
+            const item = swipeData[notifId].item;
+
+            // If swiped left more than 30px, show delete action
+            if (diff < -30) {
+                item.classList.add('swiped');
+                item.style.setProperty('--swipe-offset', '-60px');
+            } else {
+                // Reset
+                item.classList.remove('swiped');
+                item.classList.remove('swiping');
+                item.style.setProperty('--swipe-offset', '0px');
+            }
+
+            item.classList.remove('swiping');
+
+            // Clean up event listeners
+            if (e.type?.includes('touch')) {
+                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('touchend', endHandler);
+                document.removeEventListener('touchcancel', endHandler);
+            } else {
+                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('mouseup', endHandler);
+            }
+
+            delete swipeData[notifId];
         }
 
         // Mark all as read
@@ -622,35 +727,16 @@
             }
         }
 
-        // Update pagination
-        function updatePagination() {
-            document.getElementById('current-page').textContent = currentPage;
-            document.getElementById('total-pages').textContent = totalPages;
-            document.getElementById('prev-btn').disabled = currentPage <= 1;
-            document.getElementById('next-btn').disabled = currentPage >= totalPages;
-            document.getElementById('pagination-container').style.display = totalPages > 1 ? 'flex' : 'none';
-        }
-
-        // Pagination
-        function previousPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                loadNotifications(currentPage);
-            }
-        }
-
-        function nextPage() {
-            if (currentPage < totalPages) {
-                currentPage++;
-                loadNotifications(currentPage);
-            }
-        }
-
         // Escape HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Go back
+        function goBack() {
+            window.history.back();
         }
 
         // Filter tab click
@@ -668,7 +754,8 @@
         document.getElementById('mark-all-read-btn').addEventListener('click', markAllAsRead);
 
         // Initial load
-        loadNotifications(1);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications(1);
+        });
     </script>
-</body>
-</html>
+{% endblock %}

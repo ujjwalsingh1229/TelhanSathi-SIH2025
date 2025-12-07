@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sell Harvest - Telhan Sathi</title>
+{% extends "base.html" %}
+
+{% block title %}{{ crop }} Sell Harvest - Telhan Sathi{% endblock %}
+
+{% block style %}
     <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -43,29 +42,7 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* --- Header --- */
-        .header {
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            background: var(--white);
-            border-bottom: 1px solid #eee;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .back-btn {
-            font-size: 24px;
-            margin-right: 16px;
-            cursor: pointer;
-            color: #333;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 700;
-        }
+       
 
         .content {
             padding: 20px;
@@ -320,16 +297,11 @@
         .photo-box.has-image { border: 2px solid var(--primary-green); }
 
     </style>
-</head>
-<body>
-
+{% endblock %}
+{% block content %}
 <div class="app-container">
-    <header class="header">
-        <div class="back-btn" onclick="history.back()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        </div>
-        <h1>Sell Your Harvest</h1>
-    </header>
+        <h2>Sell Your Harvest</h2>
+
 
     <div class="content">
         <div class="crop-badge">
@@ -397,14 +369,14 @@
             </div>
         </div>
     </div>
-
-    <footer class="footer-actions">
         <button id="submitBtn" class="btn-submit" onclick="submitSellRequest()">
             <span>Confirm Request</span>
         </button>
-    </footer>
+        <br><br><br>
 </div>
+{% endblock %}
 
+{% block script %}
 <script>
     // --- 1. INITIALIZATION ---
     const params = new URLSearchParams(window.location.search);
@@ -511,5 +483,4 @@
     }
 </script>
 
-</body>
-</html>
+{% endblock %}

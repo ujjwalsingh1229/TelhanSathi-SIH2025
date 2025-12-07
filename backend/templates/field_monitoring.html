@@ -1,196 +1,502 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Field Monitoring</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    body{font-family:Segoe UI,Arial;padding:16px;background:#f5f7fa}
-    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:14px}
-    .btn{padding:10px 12px;border-radius:8px;border:none;cursor:pointer}
-    .btn-primary{background:#2d7a3e;color:#fff}
-    .btn-ghost{background:#fff;border:1px solid #ccc}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .kv{font-size:13px;color:#555}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Field Monitoring</h2>
-    <div id="statusLine">Loading status…</div>
-  </div>
+{% extends "base.html" %}
 
-  <script>
-    // Server-provided initial state (may be empty) to avoid waiting on client fetch
-    window.FM_INIT = {{ init|tojson if init is defined else 'null' }};
-  </script>
+{% block title %}Field Monitoring - Telhan Sathi{% endblock %}
 
-  <div id="applyCard" class="card" style="display:none">
-    <h3>Apply for IoT Field Monitoring Kit</h3>
-    <p>Kit includes: ESP32, DHT22, Capacitive soil moisture sensor, LDR, temp probe. Free demo installation may be available.</p>
-    <label>Notes (optional)</label>
-    <div><textarea id="applyNotes" rows="3" style="width:100%"></textarea></div>
-    <div style="margin-top:8px">
-      <button id="applyBtn" class="btn btn-primary">Apply for Kit</button>
-    </div>
-    <div id="applyResult" style="margin-top:8px;color:green"></div>
-  </div>
+{% block content %}
+       
 
-  <div id="monitorCard" class="card" style="display:none">
-    <h3>🌾 Field Status & Health</h3>
-    
-    <!-- Field Status Badge -->
-    <div id="statusBadge" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;border-radius:8px;background:#f0f0f0">
-      <div style="width:40px;height:40px;border-radius:50%;background:#999" id="statusCircle"></div>
-      <div>
-        <div style="font-weight:bold;font-size:16px" id="statusText">Checking…</div>
-        <div style="font-size:12px;color:#666">Last update: <span id="lastUpdate">-</span></div>
-      </div>
-      <button id="refreshBtn" class="btn btn-ghost" style="margin-left:auto">Refresh</button>
-    </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Status Line Card -->
+            <div class="card">
+                <h2 class="card-title">🌾 Field Monitoring</h2>
+                <div id="statusLine" class="status-line">Loading status…</div>
+            </div>
 
-    <!-- Current Metrics -->
-    <div style="margin-bottom:16px">
-      <div style="font-weight:bold;margin-bottom:8px">Current Field Conditions:</div>
-      <div class="grid">
-        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
-          <div style="font-size:12px;color:#666">Temperature</div>
-          <div style="font-size:18px;font-weight:bold" id="tempVal">-</div>
+            <!-- Server-provided initial state -->
+            <script>
+                window.FM_INIT = {{ init|tojson if init is defined else 'null' }};
+            </script>
+
+            <!-- Apply for IoT Kit Card -->
+            <div id="applyCard" class="card" style="display:none">
+                <h3 class="card-subtitle">Apply for IoT Field Monitoring Kit</h3>
+                <p class="card-description">Kit includes: ESP32, DHT22, Capacitive soil moisture sensor, LDR, temp probe. Free demo installation may be available.</p>
+                <label class="input-label">Notes (optional)</label>
+                <textarea id="applyNotes" class="input-field textarea-field" rows="3"></textarea>
+                <div style="margin-top:12px">
+                    <button id="applyBtn" class="btn btn-primary" style="width:100%">Apply for Kit</button>
+                </div>
+                <div id="applyResult" class="apply-result"></div>
+            </div>
+
+            <!-- Monitoring Card -->
+            <div id="monitorCard" class="card" style="display:none">
+                <h3 class="card-subtitle">🌾 Field Status & Health</h3>
+                
+                <!-- Field Status Badge -->
+                <div id="statusBadge" class="status-badge">
+                    <div id="statusCircle" class="status-circle"></div>
+                    <div class="status-info">
+                        <div class="status-text" id="statusText">Checking…</div>
+                        <div class="status-subtext">Last update: <span id="lastUpdate">-</span></div>
+                    </div>
+                    <button id="refreshBtn" class="btn btn-refresh">Refresh</button>
+                </div>
+
+                <!-- Current Metrics -->
+                <div class="metrics-section">
+                    <div class="metrics-title">📊 Current Field Conditions:</div>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <div class="metric-label">🌡️ Temperature</div>
+                            <div class="metric-value" id="tempVal">-</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">💧 Humidity</div>
+                            <div class="metric-value" id="humVal">-</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">🌱 Soil Moisture</div>
+                            <div class="metric-value" id="soilVal">-</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">☀️ Light</div>
+                            <div class="metric-value" id="lightVal">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div id="recommendationsBox" class="recommendations-section">
+                    <div class="recommendations-title">💡 Recommendations:</div>
+                    <div id="recommendationsList" class="recommendations-list">
+                        <div class="recommendation-item">Loading…</div>
+                    </div>
+                </div>
+
+                <!-- Issues Alert -->
+                <div id="issuesBox" class="issues-section" style="display:none">
+                    <div class="issues-title">⚠️ Issues Detected:</div>
+                    <div id="issuesList" class="issues-list"></div>
+                </div>
+
+                <!-- Device Info -->
+                <div class="device-info">
+                    <div><strong>Device:</strong> <span id="devSerial">-</span></div>
+                </div>
+            </div>
         </div>
-        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
-          <div style="font-size:12px;color:#666">Humidity</div>
-          <div style="font-size:18px;font-weight:bold" id="humVal">-</div>
-        </div>
-        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
-          <div style="font-size:12px;color:#666">Soil Moisture</div>
-          <div style="font-size:18px;font-weight:bold" id="soilVal">-</div>
-        </div>
-        <div style="padding:10px;background:#f9f9f9;border-radius:6px">
-          <div style="font-size:12px;color:#666">Light</div>
-          <div style="font-size:18px;font-weight:bold" id="lightVal">-</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Recommendations -->
-    <div id="recommendationsBox" style="margin-bottom:16px">
-      <div style="font-weight:bold;margin-bottom:8px">💡 Recommendations:</div>
-      <div id="recommendationsList" style="border-left:4px solid #2d7a3e;padding-left:12px">
-        <div style="font-size:13px;color:#555">Loading…</div>
-      </div>
-    </div>
+        <style>
+            
 
-    <!-- Issues Alert -->
-    <div id="issuesBox" style="display:none;margin-bottom:16px;padding:12px;background:#fff3cd;border-left:4px solid #ff9800;border-radius:6px">
-      <div style="font-weight:bold;margin-bottom:8px">⚠️ Issues Detected:</div>
-      <div id="issuesList" style="font-size:13px;color:#555"></div>
-    </div>
+            .icon-button {
+                width: 24px;
+                height: 24px;
+                fill: white;
+                cursor: pointer;
+            }
 
-    <!-- Device Info -->
-    <div style="padding:10px;background:#f0f0f0;border-radius:6px;margin-bottom:12px">
-      <div class="kv"><strong>Device:</strong> <span id="devSerial">-</span></div>
-    </div>
-  </div>
+            .main-content {
+                flex-grow: 1;
+                overflow-y: auto;
+                padding: 8px;
+                padding-bottom: 80px;
+            }
 
-</script>
-<script>
-function applyInit(init){
-  if(!init){ document.getElementById('statusLine').textContent = 'Loading status…'; return; }
-  if(init.has_device){
-    document.getElementById('statusLine').textContent = '✓ IoT Device Active on your farm';
-    document.getElementById('applyCard').style.display='none';
-    document.getElementById('monitorCard').style.display='block';
-    document.getElementById('devSerial').textContent = init.device && init.device.serial ? init.device.serial : '-';
-    if(init.device && init.device.installed_at){ 
-      document.getElementById('lastUpdate').textContent = new Date(init.device.installed_at).toLocaleString(); 
-    }
-  } else {
-    document.getElementById('statusLine').textContent = 'No device installed yet.';
-    document.getElementById('applyCard').style.display='block';
-    document.getElementById('monitorCard').style.display='none';
-    if(init.last_request){ document.getElementById('applyResult').textContent = 'Last request: '+init.last_request.status; }
-  }
-}
+            .card {
+                background: #fff;
+                padding: 16px;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                margin-bottom: 15px;
+            }
 
-document.getElementById('applyBtn').addEventListener('click', async ()=>{
-  const notes = document.getElementById('applyNotes').value;
-  const res = await fetch('/field-monitoring/api/apply', {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({notes})});
-  const j = await res.json();
-  if(j.success){ document.getElementById('applyResult').textContent = 'Application submitted!'; loadStatus(); }
-});
+            .card-title {
+                margin: 0 0 8px 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: #333;
+            }
 
-function renderFieldStatus(fieldStatus){
-  if(!fieldStatus) return;
-  
-  // Update status badge
-  const statusCircle = document.getElementById('statusCircle');
-  const statusText = document.getElementById('statusText');
-  statusCircle.style.background = fieldStatus.status_color;
-  statusText.textContent = fieldStatus.overall_status;
-  
-  // Update metrics
-  const metrics = fieldStatus.metrics || {};
-  document.getElementById('tempVal').textContent = metrics.temperature || '-';
-  document.getElementById('humVal').textContent = metrics.humidity || '-';
-  document.getElementById('soilVal').textContent = metrics.soil_moisture || '-';
-  document.getElementById('lightVal').textContent = metrics.light || '-';
-  
-  // Update recommendations
-  const recList = document.getElementById('recommendationsList');
-  if(fieldStatus.recommendations && fieldStatus.recommendations.length > 0){
-    recList.innerHTML = fieldStatus.recommendations.map(r => `<div style="margin-bottom:6px;font-size:13px">${r}</div>`).join('');
-  } else {
-    recList.innerHTML = '<div style="font-size:13px;color:#666">No specific recommendations at this time.</div>';
-  }
-  
-  // Show/hide issues
-  const issuesBox = document.getElementById('issuesBox');
-  const issuesList = document.getElementById('issuesList');
-  if(fieldStatus.issues && fieldStatus.issues.length > 0){
-    issuesBox.style.display = 'block';
-    issuesList.innerHTML = fieldStatus.issues.map(i => `<div style="margin-bottom:4px">• ${i}</div>`).join('');
-  } else {
-    issuesBox.style.display = 'none';
-  }
-}
+            .card-subtitle {
+                margin: 0 0 12px 0;
+                font-size: 15px;
+                font-weight: 600;
+                color: #333;
+            }
 
-async function loadStatus(){
-  // try client fetch (fresh) first; fallback to server-provided init
-  try{
-    const res = await fetch('/field-monitoring/api/status', {credentials:'same-origin'});
-    if(res.ok){
-      const j = await res.json();
-      if(!j.error && j.has_device){
-        applyInit(j);
-      } else {
-        applyInit(j);
-      }
-      return;
-    }
-  } catch(e){ console.warn('status fetch failed', e); }
-  // fallback to server init
-  if(window.FM_INIT){ applyInit(window.FM_INIT); }
-}
+            .card-description {
+                font-size: 13px;
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 12px;
+            }
 
-async function loadReadings(){
-  try{
-    const res = await fetch('/field-monitoring/api/readings', {credentials:'same-origin'});
-    const j = await res.json();
-    if(j.error){ console.error(j); return; }
-    if(j.field_status){ renderFieldStatus(j.field_status); }
-    const latestReading = j.readings && j.readings.length > 0 ? j.readings[j.readings.length-1] : null;
-    if(latestReading){ document.getElementById('lastUpdate').textContent = new Date(latestReading.received_at).toLocaleString(); }
-  } catch(e){ console.warn('readings fetch failed'); }
-}
+            .status-line {
+                font-size: 13px;
+                color: #666;
+            }
 
-document.getElementById('refreshBtn').addEventListener('click', loadReadings);
+            .input-label {
+                font-size: 12px;
+                color: #666;
+                display: block;
+                margin-bottom: 6px;
+                font-weight: 500;
+            }
 
-window.addEventListener('DOMContentLoaded', ()=>{
-  if(window.FM_INIT){ applyInit(window.FM_INIT); }
-  // still attempt to load fresh status
-  loadStatus();
-});
-</script>
-</body>
-</html>
+            .input-field {
+                width: 100%;
+                padding: 10px;
+                border-radius: 6px;
+                border: 1px solid #ddd;
+                font-size: 13px;
+                font-family: inherit;
+                transition: border-color 0.2s;
+            }
+
+            .input-field:focus {
+                outline: none;
+                border-color: #388e3c;
+                box-shadow: 0 0 0 2px rgba(56, 142, 60, 0.1);
+            }
+
+            .textarea-field {
+                resize: vertical;
+            }
+
+            .apply-result {
+                margin-top: 8px;
+                font-size: 13px;
+                color: #2e7d32;
+                font-weight: 500;
+            }
+
+            .status-badge {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 20px;
+                padding: 14px;
+                border-radius: 8px;
+                background: linear-gradient(135deg, #f0f7f0 0%, #ffffff 100%);
+                border: 1px solid #e0e0e0;
+            }
+
+            .status-circle {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: #999;
+                flex-shrink: 0;
+            }
+
+            .status-info {
+                flex: 1;
+            }
+
+            .status-text {
+                font-weight: 600;
+                font-size: 16px;
+                color: #333;
+            }
+
+            .status-subtext {
+                font-size: 11px;
+                color: #999;
+                margin-top: 2px;
+            }
+
+            .btn-refresh {
+                background: #f0f0f0;
+                border: 1px solid #ddd;
+                color: #666;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .btn-refresh:hover {
+                background: #388e3c;
+                color: white;
+                border-color: #388e3c;
+            }
+
+            .metrics-section {
+                margin-bottom: 20px;
+            }
+
+            .metrics-title {
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #333;
+                font-size: 14px;
+            }
+
+            .metrics-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            .metric-box {
+                padding: 12px;
+                background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+                border-radius: 8px;
+                border-left: 4px solid #388e3c;
+                text-align: center;
+            }
+
+            .metric-label {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 6px;
+            }
+
+            .metric-value {
+                font-size: 18px;
+                font-weight: bold;
+                color: #388e3c;
+            }
+
+            .recommendations-section {
+                margin-bottom: 20px;
+            }
+
+            .recommendations-title {
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #333;
+                font-size: 14px;
+            }
+
+            .recommendations-list {
+                border-left: 4px solid #388e3c;
+                padding-left: 12px;
+                background: #f9f9f9;
+                padding: 12px;
+                border-radius: 6px;
+            }
+
+            .recommendation-item {
+                font-size: 13px;
+                color: #555;
+                margin-bottom: 6px;
+                line-height: 1.5;
+            }
+
+            .recommendation-item:last-child {
+                margin-bottom: 0;
+            }
+
+            .issues-section {
+                margin-bottom: 20px;
+                padding: 12px;
+                background: #fff3cd;
+                border-left: 4px solid #ff9800;
+                border-radius: 6px;
+            }
+
+            .issues-title {
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #333;
+                font-size: 14px;
+            }
+
+            .issues-list {
+                font-size: 13px;
+                color: #666;
+            }
+
+            .issues-list > div {
+                margin-bottom: 4px;
+            }
+
+            .device-info {
+                padding: 12px;
+                background: #f0f0f0;
+                border-radius: 6px;
+                font-size: 13px;
+                color: #555;
+            }
+
+            .btn {
+                padding: 10px 16px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                transition: all 0.2s;
+            }
+
+            .btn-primary {
+                background: #388e3c;
+                color: white;
+            }
+
+            .btn-primary:hover {
+                background: #2e7d32;
+                box-shadow: 0 2px 8px rgba(56, 142, 60, 0.3);
+            }
+
+            @media (max-width: 420px) {
+                .metrics-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .status-badge {
+                    flex-direction: column;
+                    text-align: center;
+                }
+
+                .btn-refresh {
+                    width: 100%;
+                }
+            }
+        </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        function applyInit(init) {
+            if (!init) { 
+                document.getElementById('statusLine').textContent = 'Loading status…'; 
+                return; 
+            }
+            
+            if (init.has_device) {
+                document.getElementById('statusLine').textContent = '✓ IoT Device Active on your farm';
+                document.getElementById('applyCard').style.display = 'none';
+                document.getElementById('monitorCard').style.display = 'block';
+                document.getElementById('devSerial').textContent = init.device && init.device.serial ? init.device.serial : '-';
+                if (init.device && init.device.installed_at) { 
+                    document.getElementById('lastUpdate').textContent = new Date(init.device.installed_at).toLocaleString(); 
+                }
+            } else {
+                document.getElementById('statusLine').textContent = 'No device installed yet.';
+                document.getElementById('applyCard').style.display = 'block';
+                document.getElementById('monitorCard').style.display = 'none';
+                if (init.last_request) { 
+                    document.getElementById('applyResult').textContent = 'Last request: ' + init.last_request.status; 
+                }
+            }
+        }
+
+        document.getElementById('applyBtn').addEventListener('click', async () => {
+            const notes = document.getElementById('applyNotes').value;
+            const res = await fetch('/field-monitoring/api/apply', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes })
+            });
+            const j = await res.json();
+            if (j.success) {
+                document.getElementById('applyResult').textContent = 'Application submitted!';
+                loadStatus();
+            }
+        });
+
+        function renderFieldStatus(fieldStatus) {
+            if (!fieldStatus) return;
+
+            // Update status badge
+            const statusCircle = document.getElementById('statusCircle');
+            const statusText = document.getElementById('statusText');
+            
+            // Color mapping for status
+            const statusColors = {
+                'Healthy': '#2e7d32',
+                'Caution': '#ff9800',
+                'Attention Needed': '#f44336'
+            };
+            
+            statusCircle.style.background = statusColors[fieldStatus.overall_status] || '#999';
+            statusText.textContent = fieldStatus.overall_status;
+
+            // Update metrics
+            const metrics = fieldStatus.metrics || {};
+            document.getElementById('tempVal').textContent = metrics.temperature || '-';
+            document.getElementById('humVal').textContent = metrics.humidity || '-';
+            document.getElementById('soilVal').textContent = metrics.soil_moisture || '-';
+            document.getElementById('lightVal').textContent = metrics.light || '-';
+
+            // Update recommendations
+            const recList = document.getElementById('recommendationsList');
+            if (fieldStatus.recommendations && fieldStatus.recommendations.length > 0) {
+                recList.innerHTML = fieldStatus.recommendations
+                    .map(r => `<div class="recommendation-item">${r}</div>`)
+                    .join('');
+            } else {
+                recList.innerHTML = '<div class="recommendation-item">No specific recommendations at this time.</div>';
+            }
+
+            // Show/hide issues
+            const issuesBox = document.getElementById('issuesBox');
+            const issuesList = document.getElementById('issuesList');
+            if (fieldStatus.issues && fieldStatus.issues.length > 0) {
+                issuesBox.style.display = 'block';
+                issuesList.innerHTML = fieldStatus.issues
+                    .map(i => `<div>• ${i}</div>`)
+                    .join('');
+            } else {
+                issuesBox.style.display = 'none';
+            }
+        }
+
+        async function loadStatus() {
+            try {
+                const res = await fetch('/field-monitoring/api/status', { credentials: 'same-origin' });
+                if (res.ok) {
+                    const j = await res.json();
+                    applyInit(j);
+                    return;
+                }
+            } catch (e) {
+                console.warn('status fetch failed', e);
+            }
+            if (window.FM_INIT) {
+                applyInit(window.FM_INIT);
+            }
+        }
+
+        async function loadReadings() {
+            try {
+                const res = await fetch('/field-monitoring/api/readings', { credentials: 'same-origin' });
+                const j = await res.json();
+                if (j.error) {
+                    console.error(j);
+                    return;
+                }
+                if (j.field_status) {
+                    renderFieldStatus(j.field_status);
+                }
+                const latestReading = j.readings && j.readings.length > 0 ? j.readings[j.readings.length - 1] : null;
+                if (latestReading) {
+                    document.getElementById('lastUpdate').textContent = new Date(latestReading.received_at).toLocaleString();
+                }
+            } catch (e) {
+                console.warn('readings fetch failed');
+            }
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', loadReadings);
+
+        function goBack() {
+            window.history.back();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.FM_INIT) {
+                applyInit(window.FM_INIT);
+            }
+            loadStatus();
+        });
+    </script>
+{% endblock %}

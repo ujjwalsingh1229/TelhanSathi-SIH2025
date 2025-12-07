@@ -14,7 +14,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f7fa;
-            padding: 10px;
+
         }
 
         .container {
@@ -331,6 +331,10 @@
 
     <script>
         const notificationId = window.location.pathname.split('/').pop();
+        
+        // Get action link from query parameter if provided
+        const queryParams = new URLSearchParams(window.location.search);
+        const actionLinkFromQuery = queryParams.get('link');
 
         // Get icon for notification type
         function getNotificationIcon(type) {

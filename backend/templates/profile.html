@@ -382,8 +382,8 @@
                     <div class="info-value" id="crops-value">—</div>
                 </div>
                 <div class="info-item full-width">
-                    <div class="info-label">Water Type</div>
-                    <div class="info-value" id="water-value">—</div>
+                    <div class="info-label">Irrigation Method</div>
+                    <div class="info-value" id="irrigation-value">—</div>
                 </div>
             </div>
         </div>
@@ -445,8 +445,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Check if server provided farmer data (Jinja2 template variable)
-        const serverFarmer = {{ farmer | tojson }};
-
+        const serverFarmer = {{ farmer|tojson if farmer is defined and farmer else 'null' }};
         
         if (serverFarmer) {
             // Use server-provided farmer data (fastest and most reliable)
@@ -554,7 +553,7 @@ function populateProfile(farmer) {
     document.querySelector('#land-area-value').textContent = farmer.total_land_area_hectares ? `${farmer.total_land_area_hectares} hectares` : '—';
     document.querySelector('#land-type-value').textContent = farmer.land_type || '—';
     document.querySelector('#crops-value').textContent = farmer.current_crops || '—';
-    document.querySelector('#water-value').textContent = farmer.water_type || '—';
+    document.querySelector('#irrigation-value').textContent = farmer.irrigation_method || '—';
 
     // Financial
     document.querySelector('#bank-value').textContent = farmer.bank_name || '—';

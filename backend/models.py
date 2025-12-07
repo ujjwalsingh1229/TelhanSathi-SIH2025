@@ -134,6 +134,9 @@ class Farmer(db.Model):
     current_crops = db.Column(db.String(500))
     onboarding_completed = db.Column(db.Boolean, default=False)
     
+    # ===== GAMIFICATION =====
+    coins_earned = db.Column(db.Integer, default=0)  # Total coins earned
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -142,6 +145,7 @@ class Farmer(db.Model):
     subsidy_applications = db.relationship('SubsidyApplication', backref='farmer', lazy=True, cascade='all, delete-orphan')
     price_alerts = db.relationship('PriceAlert', backref='farmer', lazy=True, cascade='all, delete-orphan')
     rewards = db.relationship('FarmerReward', backref='farmer', lazy=True, cascade='all, delete-orphan')
+    coin_balance = db.relationship('CoinBalance', backref='farmer', uselist=False, cascade='all, delete-orphan')
 
 
     
@@ -452,4 +456,139 @@ class SensorReading(db.Model):
 
     def __repr__(self):
         return f'<SensorReading {self.id} device:{self.device_id} at {self.received_at}>'
+
+
+# ===== GAMIFICATION & REDEMPTION MODELS =====
+
+class CoinBalance(db.Model):
+    """Tracks total coins earned by each farmer."""
+    __tablename__ = 'coin_balances'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), unique=True, nullable=False)
+    total_coins = db.Column(db.Integer, default=0)
+    available_coins = db.Column(db.Integer, default=0)
+    redeemed_coins = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    transactions = db.relationship('CoinTransaction', backref='coin_balance', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<CoinBalance farmer:{self.farmer_id} available:{self.available_coins}>'
+
+
+class CoinTransaction(db.Model):
+    """Records all coin earnings and redemptions."""
+    __tablename__ = 'coin_transactions'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    coin_balance_id = db.Column(db.String(36), db.ForeignKey('coin_balances.id'), nullable=False)
+    
+    transaction_type = db.Column(db.String(50), nullable=False)  # earned, redeemed
+    amount = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.String(255))  # e.g., "Subsidy Applied", "Deal Completed", etc.
+    
+    related_type = db.Column(db.String(50))  # subsidy_application, marketplace_deal, etc.
+    related_id = db.Column(db.String(36))
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<CoinTransaction {self.transaction_type} {self.amount} coins>'
+
+
+class RedemptionOffer(db.Model):
+    """Catalog of all redemption offers available in the store."""
+    __tablename__ = 'redemption_offers'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Offer details
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(100), nullable=False)  # Farm Inputs, Services, Yantra, Tech, VIP
+    
+    coin_cost = db.Column(db.Integer, nullable=False)
+    icon = db.Column(db.String(50))  # Emoji or icon identifier
+    color = db.Column(db.String(7), default='#388e3c')  # Hex color
+    
+    # Offer metadata
+    offer_type = db.Column(db.String(50))  # discount, free, service, etc.
+    actual_value = db.Column(db.String(255))  # e.g., "₹500", "Free", "30 Days"
+    validity_days = db.Column(db.Integer, default=90)
+    
+    # Availability
+    is_active = db.Column(db.Boolean, default=True)
+    stock_limit = db.Column(db.Integer)  # None = unlimited
+    stock_redeemed = db.Column(db.Integer, default=0)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    redemptions = db.relationship('FarmerRedemption', backref='offer', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<RedemptionOffer {self.title} - {self.coin_cost} coins>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'category': self.category,
+            'coin_cost': self.coin_cost,
+            'icon': self.icon,
+            'color': self.color,
+            'offer_type': self.offer_type,
+            'actual_value': self.actual_value,
+            'validity_days': self.validity_days,
+            'is_active': self.is_active,
+            'stock_limit': self.stock_limit,
+            'stock_redeemed': self.stock_redeemed,
+            'available_stock': self.stock_limit - self.stock_redeemed if self.stock_limit else None
+        }
+
+
+class FarmerRedemption(db.Model):
+    """Records individual farmer redemptions."""
+    __tablename__ = 'farmer_redemptions'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), nullable=False)
+    offer_id = db.Column(db.String(36), db.ForeignKey('redemption_offers.id'), nullable=False)
+    
+    # Redemption details
+    coins_spent = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(50), default='active')  # active, expired, used, cancelled
+    
+    redeemed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)  # Calculated from validity_days
+    used_at = db.Column(db.DateTime)
+    
+    # Code for redemption (e.g., coupon code, reference ID)
+    redemption_code = db.Column(db.String(50), unique=True)
+    
+    # Additional metadata
+    notes = db.Column(db.Text)  # Usage notes, status updates
+    
+    farmer = db.relationship('Farmer', backref='redemptions')
+    
+    def __repr__(self):
+        return f'<FarmerRedemption {self.redemption_code} status:{self.status}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'offer_title': self.offer.title,
+            'offer_id': self.offer_id,
+            'coins_spent': self.coins_spent,
+            'status': self.status,
+            'redeemed_at': self.redeemed_at.isoformat(),
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'used_at': self.used_at.isoformat() if self.used_at else None,
+            'redemption_code': self.redemption_code
+        }
 
