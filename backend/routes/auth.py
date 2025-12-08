@@ -165,7 +165,7 @@ def login_with_mobile():
     session['internal_farmer_id'] = farmer.id  # Store internal ID for queries
     
     # Redirect to OTP verification page
-    phone_masked = mobile_number[-4:] + '****'
+    phone_masked = mobile_number[-4:]
     return render_template('otp.html', farmer_id=farmer.farmer_id, phone_masked=phone_masked)
 
 

@@ -16,7 +16,6 @@
 
         body {
             font-family: 'Noto Sans Devanagari', sans-serif;
-            min-height: 100vh;
             background: linear-gradient(135deg, #f5f7fa 0%, #e4edf0 100%);
             display: flex;
             justify-content: center;
@@ -28,6 +27,7 @@
         /* MOBILE: FULL WIDTH (Login Page Style) */
         @media (max-width: 768px) {
             body {
+                /* Ensures the green background covers the whole mobile screen */
                 background: linear-gradient(135deg, #1e3a24 0%, #2d5735 100%);
                 display: block;
                 padding: 0;
@@ -45,11 +45,11 @@
             height: auto;
         }
 
-        /* MOBILE: FULL SCREEN (Login Page Style) */
+        /* MOBILE: FULL SCREEN (Adjusted for better flow without footer) */
         @media (max-width: 768px) {
             .main-container {
                 max-width: 100%;
-                min-height: 100vh;
+                /* Removed min-height: 100vh */
                 border-radius: 0;
                 box-shadow: none;
                 background: transparent;
@@ -66,13 +66,13 @@
             align-items: center;
             gap: 20px;
             color: #fff;
+            flex-shrink: 0;
         }
 
         @media (max-width: 768px) {
             .header {
                 padding: 28px 24px;
                 border-radius: 0;
-                flex-shrink: 0;
             }
         }
 
@@ -127,7 +127,7 @@
         .otp-content {
             padding: 40px 32px;
             background: white;
-            flex-grow: 1;
+            flex-grow: 1; 
         }
         
         @media (max-width: 768px) {
@@ -198,7 +198,7 @@
         .resend-group {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start; /* Align items to start for multi-line text */
+            align-items: flex-start;
             font-size: 14px;
             margin-bottom: 20px;
             padding: 0 5px;
@@ -211,7 +211,7 @@
             align-items: center;
             gap: 5px;
             line-height: 1.4;
-            flex-shrink: 0; /* Prevents timer text from shrinking */
+            flex-shrink: 0;
         }
 
         .timer-display span {
@@ -227,7 +227,7 @@
             cursor: pointer;
             transition: color 0.3s;
             display: flex;
-            flex-direction: column; /* Display link in two rows */
+            flex-direction: column;
             align-items: flex-end;
             text-align: right;
             line-height: 1.2;
@@ -262,7 +262,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
             font-family: 'Noto Sans Devanagari', sans-serif;
-            margin-top: 20px;
+            margin-top: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -281,10 +281,10 @@
         }
 
         .button-helper-text {
-            font-size: 13px;
-            color: #666;
+            font-size: 12px; 
+            color: #999;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 20px;
         }
 
         .error-message {
@@ -307,35 +307,29 @@
             color: #d32f2f;
         }
 
-        /* FOOTER (Login Page Style) */
-        .footer {
-            padding: 24px 32px;
-            text-align: center;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            flex-shrink: 0;
+        /* FOOTER (REMOVED FOOTER CSS) */
+        /* All footer-related CSS has been removed */
+        
+        /* Loading State */
+        .loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
         }
 
-        @media (max-width: 768px) {
-            .footer {
-                background: transparent;
-                border-top: none;
-                padding: 20px 24px;
-                position: relative;
-                z-index: 2;
-            }
+        .loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
         }
 
-        .copyright {
-            font-size: 13px;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 768px) {
-            .copyright {
-                color: rgba(255, 255, 255, 0.9);
-            }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -358,7 +352,9 @@
                  सुरक्षा सत्यापन
             </div>
             
-            <div class="otp-instruction">OTP आपके पंजीकृत मोबाइल नंबर पर भेजा गया है, जिसके अंतिम अंक *{{ phone_masked }}* हैं।</div>
+            <div class="otp-instruction">
+                OTP आपके पंजीकृत मोबाइल नंबर पर भेजा गया है, जिसका नंबर ******{{ phone_masked }} है।
+            </div>
 
             {% if error %}
             <div class="error-message">
@@ -396,22 +392,15 @@
                 <div class="button-group">
                     <button type="submit" class="primary-button" id="verify-button" disabled>
                         <span class="material-icons">check_circle</span>
-                        पड़ताल करें और आगे बढ़ें
+                        सत्यापित करें
                     </button>
-                    <div class="button-helper-text">Verify & Enter</div>
                 </div>
                 
-                <div class="button-helper-text" style="margin-top: 20px; font-size: 12px; color: #999;">सत्यापन करके, आप हमारी नियम और गोपनीयता शर्तों से सहमत हैं।</div>
+                <div class="button-helper-text">सत्यापन करके, आप हमारी नियम और गोपनीयता शर्तों से सहमत हैं।</div>
             </form>
         </div>
-
-        <div class="footer">
-            <div class="copyright">
-                © भारत सरकार - कृषि मंत्रालय<br>
-                टेलहन साथी - किसानों का डिजिटल साथी
-            </div>
+        
         </div>
-    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -536,9 +525,10 @@
                     return;
                 }
                 
-                // Show loading state (You can add a CSS class for better styling)
+                // Show loading state
+                verifyButton.classList.add('loading');
                 verifyButton.disabled = true;
-                verifyButton.innerHTML = '<span class="material-icons">sync</span> सत्यापन हो रहा है...';
+                verifyButton.textContent = 'सत्यापन हो रहा है...';
             });
 
             // Start timer on load
