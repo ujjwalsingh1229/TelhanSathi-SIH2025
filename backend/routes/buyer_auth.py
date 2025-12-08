@@ -163,60 +163,188 @@ def buyer_profile():
     })
 
 
-@buyer_auth_bp.route('/api/deals')
-def buyer_deals():
-    """Get all deals (sell requests) for buyer to browse"""
-    if 'buyer_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    # Import here to avoid circular imports
-    from models_marketplace import SellRequest, SellPhoto
-    
-    # Get all sell requests
-    deals = SellRequest.query.all()
-    
-    deals_data = []
-    for deal in deals:
-        photos = SellPhoto.query.filter_by(request_id=deal.id).all()
-        deals_data.append({
-            'id': deal.id,
-            'crop_name': deal.crop_name,
-            'quantity_quintal': deal.quantity_quintal,
-            'expected_price': deal.expected_price,
-            'location': deal.location,
-            'harvest_date': deal.harvest_date,
-            'farmer_name': deal.farmer_name,
-            'farmer_phone': deal.farmer_phone,
-            'status': deal.status,
-            'photos': [{'id': p.id, 'photo_url': p.photo_url} for p in photos],
-            'created_at': deal.created_at.isoformat() if deal.created_at else None
-        })
-    
-    return jsonify(deals_data)
-
-
 @buyer_auth_bp.route('/api/my-offers')
 def buyer_my_offers():
-    """Get buyer's own offers/deals"""
+    """Get buyer's own offers (buyer-created independent offers)"""
     if 'buyer_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
     
     buyer_id = session.get('buyer_id')
     
     # Import here to avoid circular imports
-    from models_marketplace import BuyerOffer, CropListing
+    from models_marketplace import BuyerOffer, SellRequest
     
+    # Get all buyer offers for this buyer (independent offers, not linked to sell requests)
     offers = BuyerOffer.query.filter_by(buyer_id=buyer_id).all()
     
     offers_data = []
     for offer in offers:
-        listing = CropListing.query.get(offer.listing_id)
-        offers_data.append({
+        offer_dict = {
             'id': offer.id,
-            'listing_id': offer.listing_id,
-            'crop_name': listing.crop_name if listing else 'Unknown',
+            'crop_name': offer.crop_name,
+            'quantity_quintal': offer.quantity_quintal,
+            'location_wanted': offer.location_wanted,
+            'district_wanted': offer.district_wanted,
             'initial_price': offer.initial_price,
             'final_price': offer.final_price,
+            'status': offer.status,
+            'buyer_name': offer.buyer_name,
+            'buyer_mobile': offer.buyer_mobile,
+            'buyer_location': offer.buyer_location,
+            'buyer_company': offer.buyer_company,
+            'created_at': offer.created_at.isoformat() if offer.created_at else None,
+            'updated_at': offer.updated_at.isoformat() if offer.updated_at else None,
+            'sell_request': None
+        }
+        
+        # If offer has been accepted, include the linked sell request
+        if offer.sell_request_id:
+            sell_req = SellRequest.query.get(offer.sell_request_id)
+            if sell_req:
+                offer_dict['sell_request'] = {
+                    'id': sell_req.id,
+                    'crop_name': sell_req.crop_name,
+                    'quantity_quintal': sell_req.quantity_quintal,
+                    'expected_price': sell_req.expected_price,
+                    'farmer_name': sell_req.farmer_name,
+                    'farmer_phone': sell_req.farmer_phone,
+                    'location': sell_req.location,
+                    'harvest_date': sell_req.harvest_date,
+                    'status': sell_req.status,
+                    'created_at': sell_req.created_at.isoformat() if sell_req.created_at else None
+                }
+        
+        offers_data.append(offer_dict)
+    
+    return jsonify(offers_data)
+
+
+@buyer_auth_bp.route('/api/create-offer', methods=['POST'])
+def create_offer():
+    """Create a new independent buyer offer (not linked to farmer's listing)"""
+    if 'buyer_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    try:
+        buyer_id = session.get('buyer_id')
+        buyer_email = session.get('buyer_email')
+        buyer_name = session.get('buyer_name')
+        
+        data = request.get_json()
+        
+        # Required fields
+        crop_name = data.get('crop_name')
+        quantity_quintal = data.get('quantity_quintal')
+        initial_price = data.get('initial_price')
+        
+        # Optional fields
+        location_wanted = data.get('location_wanted', '')
+        district_wanted = data.get('district_wanted', '')
+        
+        # Validation
+        if not crop_name or not quantity_quintal or not initial_price:
+            return jsonify({'error': 'crop_name, quantity_quintal, and initial_price are required'}), 400
+        
+        # Validate quantity and price
+        try:
+            quantity_quintal = float(quantity_quintal)
+            initial_price = float(initial_price)
+            
+            if quantity_quintal <= 0:
+                return jsonify({'error': 'Quantity must be greater than 0'}), 400
+            if initial_price <= 0:
+                return jsonify({'error': 'Price must be greater than 0'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid quantity or price format'}), 400
+        
+        # Import models
+        from models_marketplace import BuyerOffer, Buyer
+        import uuid
+        
+        # Get buyer info
+        buyer = Buyer.query.get(buyer_id)
+        
+        # Create new independent offer
+        new_offer = BuyerOffer(
+            id=str(uuid.uuid4()),
+            buyer_id=buyer_id,
+            buyer_name=buyer_name or (buyer.buyer_name if buyer else 'Unknown'),
+            buyer_mobile=buyer.phone if buyer else '',
+            buyer_location=buyer.location if buyer else '',
+            buyer_company=buyer.company_name if buyer else '',
+            crop_name=crop_name,
+            quantity_quintal=quantity_quintal,
+            location_wanted=location_wanted,
+            district_wanted=district_wanted,
+            initial_price=initial_price,
+            final_price=None,
+            status='pending'
+        )
+        
+        db.session.add(new_offer)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Offer created successfully! Farmers in the marketplace can now see your offer.',
+            'offer': {
+                'id': new_offer.id,
+                'crop_name': new_offer.crop_name,
+                'quantity_quintal': new_offer.quantity_quintal,
+                'initial_price': new_offer.initial_price,
+                'status': new_offer.status
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to create offer: {str(e)}'}), 500
+
+
+@buyer_auth_bp.route('/api/marketplace-offers')
+def marketplace_offers():
+    """Get all buyer offers available in the marketplace (for farmers to see)
+    
+    Optional query parameters:
+    - crop_name: Filter by crop name
+    - district: Filter by district_wanted
+    - location: Filter by location_wanted
+    """
+    from models_marketplace import BuyerOffer
+    
+    # Get query parameters for filtering
+    crop_name = request.args.get('crop_name', '').strip().lower()
+    district = request.args.get('district', '').strip().lower()
+    location = request.args.get('location', '').strip().lower()
+    
+    # Get all pending buyer offers (that haven't been accepted yet)
+    query = BuyerOffer.query.filter_by(status='pending')
+    
+    # Apply filters if provided
+    if crop_name:
+        query = query.filter(BuyerOffer.crop_name.ilike(f'%{crop_name}%'))
+    
+    if district:
+        query = query.filter(BuyerOffer.district_wanted.ilike(f'%{district}%'))
+    
+    if location:
+        query = query.filter(BuyerOffer.location_wanted.ilike(f'%{location}%'))
+    
+    offers = query.all()
+    
+    offers_data = []
+    for offer in offers:
+        offers_data.append({
+            'id': offer.id,
+            'crop_name': offer.crop_name,
+            'quantity_quintal': offer.quantity_quintal,
+            'location_wanted': offer.location_wanted,
+            'district_wanted': offer.district_wanted,
+            'initial_price': offer.initial_price,
+            'buyer_name': offer.buyer_name,
+            'buyer_mobile': offer.buyer_mobile,
+            'buyer_company': offer.buyer_company,
+            'buyer_location': offer.buyer_location,
             'status': offer.status,
             'created_at': offer.created_at.isoformat() if offer.created_at else None
         })

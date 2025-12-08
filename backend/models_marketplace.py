@@ -60,13 +60,6 @@ class CropListing(db.Model):
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    offers = db.relationship(
-        "BuyerOffer",
-        backref="listing",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
-
 
 class SellRequest(db.Model):
     __tablename__ = "sell_requests"
@@ -108,18 +101,35 @@ class BuyerOffer(db.Model):
     __tablename__ = "buyer_offers"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    listing_id = db.Column(db.String(36), db.ForeignKey("crop_listings.id"), nullable=False)
+    
+    # Buyer information (FK to Buyer table)
     buyer_id = db.Column(db.String(36), db.ForeignKey("buyers.id"), nullable=True)
-
     buyer_name = db.Column(db.String(255))
     buyer_mobile = db.Column(db.String(20))
     buyer_location = db.Column(db.String(255))
-
-    initial_price = db.Column(db.Float)
-    final_price = db.Column(db.Float, nullable=True)
-
+    buyer_company = db.Column(db.String(255))
+    
+    # Crop details (buyer specifies what they want to buy)
+    crop_name = db.Column(db.String(100), nullable=False)
+    quantity_quintal = db.Column(db.Float, nullable=False)
+    location_wanted = db.Column(db.String(255))  # Where buyer wants crop from
+    district_wanted = db.Column(db.String(100))
+    
+    # Pricing
+    initial_price = db.Column(db.Float, nullable=False)  # Buyer's offer price
+    final_price = db.Column(db.Float, nullable=True)     # Negotiated final price
+    
+    # Optional: Reference to farmer's SellRequest if farmer responds
+    sell_request_id = db.Column(db.String(36), db.ForeignKey("sell_requests.id"), nullable=True)
+    
+    # Status: pending → accepted (by farmer) → final_confirmed → declined
     status = db.Column(db.String(20), default="pending")
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<BuyerOffer {self.crop_name} by {self.buyer_name}>'
 
 
 class MarketPrice(db.Model):

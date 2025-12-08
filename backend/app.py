@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask, render_template, send_from_directory, url_for, redirect, session
+from flask import Flask, render_template, send_from_directory, url_for, redirect, session, request, g
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -44,6 +44,8 @@ from routes.field_monitoring import fm_bp
 from routes.weather import weather_bp
 from routes.redemption_store import redemption_bp
 from routes.buyer_auth import buyer_auth_bp
+from routes.translation import translation_bp
+from translations import get_translation, TRANSLATIONS
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(onboarding_bp)
@@ -58,6 +60,7 @@ app.register_blueprint(fm_bp)
 app.register_blueprint(weather_bp)
 app.register_blueprint(redemption_bp)
 app.register_blueprint(buyer_auth_bp)
+app.register_blueprint(translation_bp)
 
 # ----------------------- ROUTES -----------------------
 
@@ -91,6 +94,26 @@ def serve_static(filename):
 @app.context_processor
 def inject_now():
     return {'now': datetime.utcnow}
+
+
+@app.context_processor
+def inject_languages():
+    """Inject supported languages into all templates"""
+    return {'supported_languages': {'en': 'English', 'hi': 'हिंदी', 'mr': 'मराठी', 'gu': 'ગુજરાતી'}}
+
+
+@app.template_filter('translate')
+def translate_filter(text, target_lang='en'):
+    """Jinja template filter for translation"""
+    if not text or target_lang == 'en':
+        return text
+    return get_translation(text, target_lang)
+
+
+@app.before_request
+def set_language_context():
+    """Set language context before each request"""
+    g.language = session.get('language', request.accept_languages.best_match(['en', 'hi', 'mr', 'gu']) or 'en')
 
 
 # ----------------------- APP RUN -----------------------

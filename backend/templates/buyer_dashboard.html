@@ -358,8 +358,8 @@
     <div class="main-container">
         <!-- TABS -->
         <div class="nav-tabs" style="display: flex;">
-            <button class="nav-link active" onclick="switchTab('available-deals')">
-                📦 Available Deals
+            <button class="nav-link active" onclick="switchTab('create-offer')">
+                ➕ Create New Offer
             </button>
             <button class="nav-link" onclick="switchTab('my-offers')">
                 💼 My Offers
@@ -369,14 +369,90 @@
             </button>
         </div>
 
-        <!-- TAB 1: AVAILABLE DEALS -->
-        <div id="available-deals" class="tab-content active">
+        <!-- TAB 1: CREATE NEW OFFER -->
+        <div id="create-offer" class="tab-content active">
             <div style="margin-bottom: 20px;">
-                <h2 style="font-size: 22px; margin-bottom: 15px;">📦 Available Crop Deals</h2>
-                <p style="color: #666;">Browse and make offers on available crop sell requests from farmers</p>
+                <h2 style="font-size: 22px; margin-bottom: 15px;">➕ Create New Crop Offer</h2>
+                <p style="color: #666;">Post a new offer for crops you want to buy. Farmers in the marketplace will see your offer and can respond to you.</p>
             </div>
-            <div class="deals-grid" id="deals-grid">
-                <div class="loader"></div>
+            
+            <!-- Create Offer Form -->
+            <div style="max-width: 600px; background: white; padding: 25px; border-radius: 12px; border: 1px solid var(--border-color);">
+                <form id="create-offer-form" onsubmit="handleCreateOffer(event)">
+                    
+                    <!-- Error Messages -->
+                    <div id="form-error" style="display: none;"></div>
+                    
+                    <!-- Crop Name -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Crop Name *</label>
+                        <input 
+                            type="text" 
+                            name="crop_name" 
+                            placeholder="e.g., Wheat, Rice, Cotton" 
+                            required
+                            style="width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: inherit;"
+                        />
+                    </div>
+
+                    <!-- Quantity -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Quantity (Quintals) *</label>
+                        <input 
+                            type="number" 
+                            name="quantity_quintal" 
+                            placeholder="e.g., 100" 
+                            min="0.01"
+                            step="0.01"
+                            required
+                            style="width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: inherit;"
+                        />
+                    </div>
+
+                    <!-- Offer Price -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Your Offer Price (₹/Quintal) *</label>
+                        <input 
+                            type="number" 
+                            name="initial_price" 
+                            placeholder="e.g., 5000" 
+                            min="0.01"
+                            step="0.01"
+                            required
+                            style="width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: inherit;"
+                        />
+                    </div>
+
+                    <!-- Location Wanted -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Preferred Location</label>
+                        <input 
+                            type="text" 
+                            name="location_wanted" 
+                            placeholder="e.g., Maharashtra, Gujarat" 
+                            style="width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: inherit;"
+                        />
+                    </div>
+
+                    <!-- District Wanted -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Preferred District</label>
+                        <input 
+                            type="text" 
+                            name="district_wanted" 
+                            placeholder="e.g., Nashik, Pune" 
+                            style="width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: inherit;"
+                        />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" style="width: 100%; padding: 14px 20px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; transition: all 0.3s;">
+                        Post Your Offer 🚀
+                    </button>
+                </form>
+
+                <!-- Success Message -->
+                <div id="form-success" style="display: none; margin-top: 15px; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724;"></div>
             </div>
         </div>
 
@@ -469,30 +545,102 @@
             event.target.classList.add('active');
 
             // Load data if needed
-            if (tabName === 'available-deals') {
-                loadAvailableDeals();
-            } else if (tabName === 'my-offers') {
+            if (tabName === 'my-offers') {
                 loadMyOffers();
             }
         }
 
-        // Load available deals
-        async function loadAvailableDeals() {
-            try {
-                const response = await fetch('/buyer/api/deals');
-                if (!response.ok) throw new Error('Failed to load deals');
+        // Handle create offer form submission
+        async function handleCreateOffer(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const errorDiv = document.getElementById('form-error');
+            const successDiv = document.getElementById('form-success');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            errorDiv.innerHTML = '';
+            successDiv.innerHTML = '';
 
-                const deals = await response.json();
-                displayDeals(deals);
+            const data = {
+                crop_name: formData.get('crop_name'),
+                quantity_quintal: parseFloat(formData.get('quantity_quintal')),
+                initial_price: parseFloat(formData.get('initial_price')),
+                location_wanted: formData.get('location_wanted'),
+                district_wanted: formData.get('district_wanted')
+            };
+
+            // Validation
+            if (!data.crop_name || !data.quantity_quintal || !data.initial_price) {
+                errorDiv.innerHTML = '<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 4px;">❌ Please fill in all required fields (*)</div>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (data.quantity_quintal <= 0) {
+                errorDiv.innerHTML = '<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 4px;">❌ Quantity must be greater than 0</div>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (data.initial_price <= 0) {
+                errorDiv.innerHTML = '<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 4px;">❌ Price must be greater than 0</div>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/buyer/api/create-offer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    successDiv.innerHTML = `<div>✅ ${result.message}</div>`;
+                    successDiv.style.display = 'block';
+                    
+                    // Reset form
+                    document.getElementById('create-offer-form').reset();
+                    
+                    // Reload offers after 2 seconds
+                    setTimeout(() => {
+                        loadMyOffers();
+                        switchTab('my-offers');
+                    }, 2000);
+                } else {
+                    errorDiv.innerHTML = `<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 4px;">❌ ${result.error || 'Failed to create offer'}</div>`;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error creating offer:', error);
+                errorDiv.innerHTML = '<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 4px;">❌ Error creating offer. Please try again.</div>';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Load my offers
+        async function loadMyOffers() {
+            try {
+                const response = await fetch('/buyer/api/my-offers');
+                if (!response.ok) throw new Error('Failed to load offers');
+
+                const offers = await response.json();
+                displayOffers(offers);
 
                 // Update count
-                document.getElementById('deals-count').textContent = deals.length;
+                document.getElementById('offers-count').textContent = offers.length;
             } catch (error) {
-                console.error('Error loading deals:', error);
-                document.getElementById('deals-grid').innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
+                console.error('Error loading offers:', error);
+                document.getElementById('offers-container').innerHTML = `
+                    <div class="empty-state">
                         <div class="empty-state-icon">⚠️</div>
-                        <p>Failed to load deals</p>
+                        <p>Failed to load offers</p>
                     </div>
                 `;
             }
@@ -513,27 +661,32 @@
             }
 
             grid.innerHTML = deals.map(deal => `
-                <div class="deal-card" onclick="viewDealDetails('${deal.id}')">
-                    <div class="deal-image">
-                        ${deal.crop_name.charAt(0).toUpperCase()}
+                <div class="deal-card">
+                    <div class="deal-card-header" onclick="viewDealDetails('${deal.id}')" style="cursor: pointer;">
+                        <div class="deal-image">
+                            ${deal.crop_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="deal-content">
+                            <div class="deal-crop">${deal.crop_name}</div>
+                            <div class="deal-detail">
+                                <span>Quantity:</span>
+                                <span>${deal.quantity_quintal} Quintals</span>
+                            </div>
+                            <div class="deal-detail">
+                                <span>Location:</span>
+                                <span>${deal.location || '-'}</span>
+                            </div>
+                            <div class="deal-detail">
+                                <span>Farmer:</span>
+                                <span>${deal.farmer_name || '-'}</span>
+                            </div>
+                            <div class="deal-price">₹${deal.expected_price}/Qtl</div>
+                            <span class="status-badge status-${deal.status}">${formatStatus(deal.status)}</span>
+                        </div>
                     </div>
-                    <div class="deal-content">
-                        <div class="deal-crop">${deal.crop_name}</div>
-                        <div class="deal-detail">
-                            <span>Quantity:</span>
-                            <span>${deal.quantity_quintal} Quintals</span>
-                        </div>
-                        <div class="deal-detail">
-                            <span>Location:</span>
-                            <span>${deal.location || '-'}</span>
-                        </div>
-                        <div class="deal-detail">
-                            <span>Farmer:</span>
-                            <span>${deal.farmer_name || '-'}</span>
-                        </div>
-                        <div class="deal-price">₹${deal.expected_price}/Qtl</div>
-                        <span class="status-badge status-${deal.status}">${formatStatus(deal.status)}</span>
-                    </div>
+                    <button class="btn btn-primary btn-sm" style="width: 100%; margin-top: 10px;" onclick="openOfferModal('${deal.id}', '${deal.crop_name}', ${deal.expected_price})">
+                        💰 Make Offer
+                    </button>
                 </div>
             `).join('');
         }
@@ -568,7 +721,8 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">💼</div>
-                        <p>You haven't made any offers yet</p>
+                        <p>You haven't created any offers yet</p>
+                        <p style="font-size: 12px; color: #999; margin-top: 10px;">Go to "➕ Create New Offer" tab to post your first offer. Farmers will see it in the marketplace and can respond!</p>
                     </div>
                 `;
                 return;
@@ -580,7 +734,9 @@
                         <thead>
                             <tr style="background: var(--bg-light); border-bottom: 2px solid var(--border-color);">
                                 <th style="padding: 12px; text-align: left; font-weight: 600;">Crop</th>
-                                <th style="padding: 12px; text-align: left; font-weight: 600;">Initial Price</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Quantity (Qtl)</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Location Wanted</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Offer Price</th>
                                 <th style="padding: 12px; text-align: left; font-weight: 600;">Final Price</th>
                                 <th style="padding: 12px; text-align: left; font-weight: 600;">Status</th>
                                 <th style="padding: 12px; text-align: left; font-weight: 600;">Date</th>
@@ -588,8 +744,10 @@
                         </thead>
                         <tbody>
                             ${offers.map(offer => `
-                                <tr style="border-bottom: 1px solid var(--border-color);">
-                                    <td style="padding: 12px;">${offer.crop_name}</td>
+                                <tr style="border-bottom: 1px solid var(--border-color); hover:background: #f5f5f5;">
+                                    <td style="padding: 12px; font-weight: 600;">${offer.crop_name}</td>
+                                    <td style="padding: 12px;">${offer.quantity_quintal}</td>
+                                    <td style="padding: 12px;">${offer.location_wanted || offer.district_wanted || 'Any'}</td>
                                     <td style="padding: 12px;">₹${offer.initial_price}</td>
                                     <td style="padding: 12px;">${offer.final_price ? '₹' + offer.final_price : '-'}</td>
                                     <td style="padding: 12px;">
@@ -622,8 +780,18 @@
             alert('Deal details view coming soon');
         }
 
-        // Load initial data
-        loadAvailableDeals();
+        // Helper function
+        function formatStatus(status) {
+            const statuses = {
+                'pending': 'Pending',
+                'accepted': 'Accepted',
+                'final_confirmed': 'Confirmed',
+                'declined': 'Declined'
+            };
+            return statuses[status] || status;
+        }
+
+        // Load initial data on page load
         loadMyOffers();
     </script>
 </body>

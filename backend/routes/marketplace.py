@@ -52,27 +52,27 @@ def crop_sellers(crop):
     return render_template("market_sellers.html", crop=crop, listings=listings, avg_price=int(avg_price))
 
 
-@market_bp.route("/nearby/<crop>")
-def nearby_prices(crop):
-    crop = crop.strip()
-    prices = MarketPrice.query.filter_by(crop_name=crop).all()
+# @market_bp.route("/nearby/<crop>")
+# def nearby_prices(crop):
+#     crop = crop.strip()
+#     prices = MarketPrice.query.filter_by(crop_name=crop).all()
     
-    if not prices:
-        # Fallback default data
-        prices = [
-            dict(buyer_name="Bharatpur Aggregators", distance_km=3, price=5450),
-            dict(buyer_name="Alwar Procurement Page", distance_km=15, price=5420),
-            dict(buyer_name="Tonk Oil Mills", distance_km=22, price=5400),
-            dict(buyer_name="Jaipur Digital Hub", distance_km=50, price=5380),
-            dict(buyer_name="Farmer Connect Platform", distance_km=8, price=5410),
-        ]
-        avg_price = 5432
-    else:
-        avg_price = sum(p.price for p in prices) / len(prices)
+#     if not prices:
+#         # Fallback default data
+#         prices = [
+#             dict(buyer_name="Bharatpur Aggregators", distance_km=3, price=5450),
+#             dict(buyer_name="Alwar Procurement Page", distance_km=15, price=5420),
+#             dict(buyer_name="Tonk Oil Mills", distance_km=22, price=5400),
+#             dict(buyer_name="Jaipur Digital Hub", distance_km=50, price=5380),
+#             dict(buyer_name="Farmer Connect Platform", distance_km=8, price=5410),
+#         ]
+#         avg_price = 5432
+#     else:
+#         avg_price = sum(p.price for p in prices) / len(prices)
     
-    today = datetime.now().strftime("%d %b %Y")
+#     today = datetime.now().strftime("%d %b %Y")
 
-    return render_template("market_nearby.html", crop=crop, prices=prices, avg_price=int(avg_price), today=today)
+#     return render_template("market_nearby.html", crop=crop, prices=prices, avg_price=int(avg_price), today=today)
 
 
 @market_bp.route("/list", methods=["POST"])
@@ -158,26 +158,39 @@ def buyer_offer(listing_id):
 @market_bp.route("/nearby/<crop>")
 def market_nearby(crop):
     crop = crop.strip()
+    offer = BuyerOffer.query.all()
+    for o in offer:
+        print(o.crop_name)
+    # Fetch buyer offers for this crop (filter by exact crop name)
+    print(f"DEBUG: Searching for crop containing '{crop}'")
+    buyer_offers = BuyerOffer.query.filter(
+        BuyerOffer.crop_name.ilike(f'%{crop}%'),
+        BuyerOffer.status == 'pending'
+    ).all()
+    print(f"DEBUG: Found {len(buyer_offers)} offers")
 
-    # Fetch today's prices for this crop
-    prices = MarketPrice.query.filter_by(crop_name=crop).all()
+    # Convert BuyerOffer objects to dict format for template
+    prices = []
+    for offer in buyer_offers:
+        prices.append({
+            'buyer_name': offer.buyer_name or offer.buyer_company or 'Buyer',
+            'distance_km': 0,  # No distance info from buyer offers
+            'price': offer.initial_price,
+            'offer_id': offer.id,
+            'buyer_location': offer.buyer_location,
+            'buyer_mobile': offer.buyer_mobile,
+        })
 
     if not prices:
         # fallback default data (this helps UI work instantly)
-        prices = [
-            dict(buyer_name="Bharatpur Aggregators", distance_km=3, price=5450),
-            dict(buyer_name="Alwar Procurement Page", distance_km=15, price=5420),
-            dict(buyer_name="Tonk Oil Mills", distance_km=22, price=5400),
-            dict(buyer_name="Jaipur Digital Hub", distance_km=50, price=5380),
-            dict(buyer_name="Farmer Connect Platform", distance_km=8, price=5410),
-        ]
+        print("No buyer offers found, using fallback data.")
         db_prices = None
     else:
         db_prices = prices
 
     # Calculate average price
     if db_prices:
-        avg_price = sum(p.price for p in db_prices) / len(db_prices)
+        avg_price = sum(p['price'] for p in db_prices) / len(db_prices)
     else:
         avg_price = 5432  # fallback
     return render_template(
@@ -235,7 +248,7 @@ def deal_review_page():
 
 @market_bp.route("/sell/create", methods=["POST"])
 def create_sell_request():
-    """Create a new sell request with photos"""
+    """Create a new sell request with photos - can be linked to a buyer offer"""
     if "farmer_id_verified" not in session:
         return jsonify({"error": "Not logged in"}), 401
     
@@ -247,6 +260,7 @@ def create_sell_request():
     quantity = float(request.form.get("quantity"))
     expected_price = float(request.form.get("expected_price"))
     harvest_date = request.form.get("harvest_date")
+    buyer_offer_id = request.form.get("buyer_offer_id")  # Optional: link to buyer offer
     
     # Create uploads directory
     uploads_dir = "static/uploads"
@@ -280,6 +294,13 @@ def create_sell_request():
     
     db.session.add(sell_request)
     db.session.flush()  # Get the ID before commit
+    
+    # Link to buyer offer if provided
+    if buyer_offer_id:
+        buyer_offer = BuyerOffer.query.get(buyer_offer_id)
+        if buyer_offer:
+            buyer_offer.sell_request_id = sell_request.id
+            buyer_offer.status = 'accepted'  # Mark offer as accepted
     
     # Save photos
     if photo1:
