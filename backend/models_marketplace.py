@@ -3,6 +3,41 @@ from datetime import datetime
 from extensions import db
 
 
+class Buyer(db.Model):
+    """Buyer model for marketplace - stores buyer profile and credentials"""
+    __tablename__ = "buyers"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Login credentials
+    email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    password = db.Column(db.String(255), nullable=False)
+    
+    # Profile information
+    buyer_name = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(20))
+    company_name = db.Column(db.String(255))
+    
+    # Location information
+    location = db.Column(db.String(255))
+    district = db.Column(db.String(100))
+    state = db.Column(db.String(100), default='Maharashtra')
+    
+    # Account status
+    is_verified = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    buyer_offers = db.relationship('BuyerOffer', backref='buyer', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<Buyer {self.buyer_name} - {self.email}>'
+
+
 class CropListing(db.Model):
     __tablename__ = "crop_listings"
 
@@ -74,6 +109,7 @@ class BuyerOffer(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     listing_id = db.Column(db.String(36), db.ForeignKey("crop_listings.id"), nullable=False)
+    buyer_id = db.Column(db.String(36), db.ForeignKey("buyers.id"), nullable=True)
 
     buyer_name = db.Column(db.String(255))
     buyer_mobile = db.Column(db.String(20))

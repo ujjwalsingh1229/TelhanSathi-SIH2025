@@ -32,8 +32,8 @@ def login():
     return render_template('login.html')
 
 @auth_bp.route('/login', methods=['POST'])
-def login_post():
-    """Handle login form submission - Farmer ID input"""
+def login_with_farmer_id():
+    """Handle login with Farmer ID"""
     farmer_id = request.form.get('farmer_id', '').strip()
     
     if not farmer_id:
@@ -42,7 +42,7 @@ def login_post():
     # Check if farmer exists
     farmer = Farmer.query.filter_by(farmer_id=farmer_id).first()
     if not farmer:
-        return render_template('login.html', error='Farmer not found. Please register first.')
+        return render_template('login.html', error='Farmer not found. Please contact support.')
     
     # Generate and send OTP
     otp_code = generate_otp()
@@ -61,6 +61,7 @@ def login_post():
     # Store farmer_id in session
     session['farmer_id'] = farmer_id
     session['phone_number'] = farmer.phone_number
+    session['login_method'] = 'farmer_id'
     
     # Redirect to OTP verification page
     phone_masked = farmer.phone_number[-4:] + '****'
@@ -79,6 +80,93 @@ def otp():
         return redirect(url_for('auth.login'))
     
     return render_template('otp.html', farmer_id=farmer_id, phone_masked=phone_masked)
+
+
+@auth_bp.route('/login-with-mobile', methods=['POST'])
+def login_with_mobile():
+    """Handle login with mobile number - creates new farmer if needed"""
+    import re
+    import random
+    import string
+    
+    mobile_number = request.form.get('mobile_number', '').strip()
+    
+    if not mobile_number:
+        return render_template('login.html', error='Please enter your mobile number')
+    
+    # Validate mobile number format (Indian: 10 digits, optionally with +91 prefix)
+    mobile_pattern = r'^(\+91)?[6-9]\d{9}$'
+    if not re.match(mobile_pattern, mobile_number):
+        return render_template('login.html', error='Please enter a valid 10-digit mobile number')
+    
+    # Normalize mobile number (remove +91 if present, keep only 10 digits)
+    mobile_number = mobile_number.lstrip('+91').lstrip('0')
+    if len(mobile_number) != 10:
+        mobile_number = mobile_number[-10:]  # Take last 10 digits
+    
+    # Try to find farmer with this phone number
+    farmer = Farmer.query.filter_by(phone_number=mobile_number).first()
+    
+    # If farmer doesn't exist, create new one
+    if not farmer:
+        try:
+            # Generate unique farmer_id (12-digit format: MMMXXXXXXXX where MMM=Maharashtra code 100, XXXXXXXX=random)
+            def generate_farmer_id():
+                # Maharashtra code + 8 random digits
+                while True:
+                    farmer_id = '100' + ''.join([str(random.randint(0, 9)) for _ in range(9)])
+                    # Check if this ID already exists
+                    if not Farmer.query.filter_by(farmer_id=farmer_id).first():
+                        return farmer_id
+            
+            # Create new farmer with minimal data
+            farmer = Farmer(
+                farmer_id=generate_farmer_id(),
+                phone_number=mobile_number,
+                name=f'Farmer_{mobile_number}',  # Temporary name, will be updated in extended onboarding
+                district='',  # Will be updated in extended onboarding
+                onboarding_completed=False,
+                is_verified=True  # Mark as verified since they'll complete onboarding
+            )
+            db.session.add(farmer)
+            db.session.commit()
+            
+            # Mark for extended onboarding flow
+            session['new_farmer'] = True
+            session['needs_extended_onboarding'] = True
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating farmer: {str(e)}")  # Log the error for debugging
+            return render_template('login.html', error='Error creating farmer profile. Please try again.')
+    else:
+        # Clear extended onboarding flag for existing farmers
+        session['new_farmer'] = False
+        session['needs_extended_onboarding'] = False
+    
+    # Generate and send OTP
+    otp_code = generate_otp()
+    otp_record = OTPRecord(
+        farmer_id=farmer.id,
+        otp_code=otp_code,
+        expires_at=calculate_otp_expiry()
+    )
+    
+    db.session.add(otp_record)
+    db.session.commit()
+    
+    # Send OTP
+    send_otp_sms(mobile_number, otp_code)
+    
+    # Store in session
+    session['farmer_id'] = farmer.farmer_id
+    session['phone_number'] = mobile_number
+    session['login_method'] = 'mobile'
+    session['internal_farmer_id'] = farmer.id  # Store internal ID for queries
+    
+    # Redirect to OTP verification page
+    phone_masked = mobile_number[-4:] + '****'
+    return render_template('otp.html', farmer_id=farmer.farmer_id, phone_masked=phone_masked)
 
 
 @auth_bp.route('/verify-otp', methods=['POST'])
@@ -142,6 +230,11 @@ def verify_otp_post():
         # If any issue accessing the flag, fall back to onboarding
         pass
 
+    # Check if this is a new farmer logging in via mobile - send to extended onboarding
+    if session.get('needs_extended_onboarding'):
+        return redirect(url_for('onboarding.extended_onboarding'))
+    
+    # Else redirect to standard onboarding
     return redirect(url_for('onboarding.onboarding'))
 
 
@@ -227,7 +320,6 @@ def api_current_farmer():
         'name': farmer.name,
         'farmer_id': farmer.farmer_id,
         'phone': farmer.phone_number,
-        'email': farmer.email,
         'village': farmer.village,
         'taluka': farmer.taluka,
         'district': farmer.district,
@@ -236,10 +328,6 @@ def api_current_farmer():
         'land_type': farmer.soil_type,
         'current_crops': farmer.current_crops,
         'water_type': farmer.water_type,
-        'bank_name': farmer.bank_name,
-        'bank_account_number': farmer.account_number,
-        'ifsc_code': farmer.ifsc_code,
-        'aadhar_number': farmer.aadhaar_number,
         'is_verified': farmer.is_verified,
         'photo_url': None,
         'date_of_birth': farmer.date_of_birth.isoformat() if farmer.date_of_birth else None,

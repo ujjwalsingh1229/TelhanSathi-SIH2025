@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Dashboard - Telhan Sathi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10b981;
+            --primary-dark: #059669;
+            --secondary-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-light: #f9fafb;
+            --text-dark: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        /* HEADER */
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .buyer-name {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* TABS */
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .nav-link {
+            color: #666;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            bottom: -2px;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        /* CARDS */
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        /* DEALS GRID */
+        .deals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .deal-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .deal-card:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .deal-image {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .deal-content {
+            padding: 15px;
+        }
+
+        .deal-crop {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .deal-detail {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .deal-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 10px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-accepted {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-confirmed {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        /* PROFILE SECTION */
+        .profile-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .profile-section {
+                grid-template-columns: 1fr;
+            }
+
+            .deals-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* BUTTON */
+        .btn-primary-custom {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* LOADING */
+        .loader {
+            border: 4px solid var(--bg-light);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">🛒 Buyer Dashboard</div>
+            <div class="header-right">
+                <div class="buyer-name">Welcome, <strong>{{ buyer.buyer_name }}</strong></div>
+                <a href="{{ url_for('buyer_auth.buyer_logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-container">
+        <!-- TABS -->
+        <div class="nav-tabs" style="display: flex;">
+            <button class="nav-link active" onclick="switchTab('available-deals')">
+                📦 Available Deals
+            </button>
+            <button class="nav-link" onclick="switchTab('my-offers')">
+                💼 My Offers
+            </button>
+            <button class="nav-link" onclick="switchTab('profile')">
+                👤 Profile
+            </button>
+        </div>
+
+        <!-- TAB 1: AVAILABLE DEALS -->
+        <div id="available-deals" class="tab-content active">
+            <div style="margin-bottom: 20px;">
+                <h2 style="font-size: 22px; margin-bottom: 15px;">📦 Available Crop Deals</h2>
+                <p style="color: #666;">Browse and make offers on available crop sell requests from farmers</p>
+            </div>
+            <div class="deals-grid" id="deals-grid">
+                <div class="loader"></div>
+            </div>
+        </div>
+
+        <!-- TAB 2: MY OFFERS -->
+        <div id="my-offers" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="font-size: 22px; margin-bottom: 15px;">💼 My Offers</h2>
+                <p style="color: #666;">Track your offers and ongoing negotiations</p>
+            </div>
+            <div id="offers-container">
+                <div class="loader"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: PROFILE -->
+        <div id="profile" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="font-size: 22px; margin-bottom: 15px;">👤 My Profile</h2>
+            </div>
+            <div class="profile-section">
+                <!-- Profile Info Card -->
+                <div class="card">
+                    <div class="card-header">Account Information</div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">{{ buyer.buyer_name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">{{ buyer.email }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Phone:</span>
+                            <span class="info-value">{{ buyer.phone or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Company:</span>
+                            <span class="info-value">{{ buyer.company_name or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">District:</span>
+                            <span class="info-value">{{ buyer.district or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">State:</span>
+                            <span class="info-value">{{ buyer.state or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Joined:</span>
+                            <span class="info-value">{{ buyer.created_at.strftime('%d %b %Y') if buyer.created_at else '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Card -->
+                <div class="card">
+                    <div class="card-header">Quick Stats</div>
+                    <div class="card-body" style="text-align: center;">
+                        <div style="margin: 20px 0;">
+                            <div style="font-size: 32px; font-weight: 700; color: var(--primary-color);" id="offers-count">0</div>
+                            <div style="color: #666;">Total Offers Made</div>
+                        </div>
+                        <div style="margin: 20px 0; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                            <div style="font-size: 32px; font-weight: 700; color: var(--secondary-color);" id="deals-count">0</div>
+                            <div style="color: #666;">Available Deals</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all nav links
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked nav link
+            event.target.classList.add('active');
+
+            // Load data if needed
+            if (tabName === 'available-deals') {
+                loadAvailableDeals();
+            } else if (tabName === 'my-offers') {
+                loadMyOffers();
+            }
+        }
+
+        // Load available deals
+        async function loadAvailableDeals() {
+            try {
+                const response = await fetch('/buyer/api/deals');
+                if (!response.ok) throw new Error('Failed to load deals');
+
+                const deals = await response.json();
+                displayDeals(deals);
+
+                // Update count
+                document.getElementById('deals-count').textContent = deals.length;
+            } catch (error) {
+                console.error('Error loading deals:', error);
+                document.getElementById('deals-grid').innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">⚠️</div>
+                        <p>Failed to load deals</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display deals
+        function displayDeals(deals) {
+            const grid = document.getElementById('deals-grid');
+
+            if (deals.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">📭</div>
+                        <p>No deals available at the moment</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = deals.map(deal => `
+                <div class="deal-card" onclick="viewDealDetails('${deal.id}')">
+                    <div class="deal-image">
+                        ${deal.crop_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="deal-content">
+                        <div class="deal-crop">${deal.crop_name}</div>
+                        <div class="deal-detail">
+                            <span>Quantity:</span>
+                            <span>${deal.quantity_quintal} Quintals</span>
+                        </div>
+                        <div class="deal-detail">
+                            <span>Location:</span>
+                            <span>${deal.location || '-'}</span>
+                        </div>
+                        <div class="deal-detail">
+                            <span>Farmer:</span>
+                            <span>${deal.farmer_name || '-'}</span>
+                        </div>
+                        <div class="deal-price">₹${deal.expected_price}/Qtl</div>
+                        <span class="status-badge status-${deal.status}">${formatStatus(deal.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load my offers
+        async function loadMyOffers() {
+            try {
+                const response = await fetch('/buyer/api/my-offers');
+                if (!response.ok) throw new Error('Failed to load offers');
+
+                const offers = await response.json();
+                displayOffers(offers);
+
+                // Update count
+                document.getElementById('offers-count').textContent = offers.length;
+            } catch (error) {
+                console.error('Error loading offers:', error);
+                document.getElementById('offers-container').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <p>Failed to load offers</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display offers
+        function displayOffers(offers) {
+            const container = document.getElementById('offers-container');
+
+            if (offers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💼</div>
+                        <p>You haven't made any offers yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-light); border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Crop</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Initial Price</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Final Price</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${offers.map(offer => `
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 12px;">${offer.crop_name}</td>
+                                    <td style="padding: 12px;">₹${offer.initial_price}</td>
+                                    <td style="padding: 12px;">${offer.final_price ? '₹' + offer.final_price : '-'}</td>
+                                    <td style="padding: 12px;">
+                                        <span class="status-badge status-${offer.status}">${formatStatus(offer.status)}</span>
+                                    </td>
+                                    <td style="padding: 12px;">${new Date(offer.created_at).toLocaleDateString('en-IN')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Helper function
+        function formatStatus(status) {
+            const statuses = {
+                'pending': 'Pending',
+                'accepted': 'Accepted',
+                'final_confirmed': 'Confirmed',
+                'declined': 'Declined'
+            };
+            return statuses[status] || status;
+        }
+
+        // View deal details
+        function viewDealDetails(dealId) {
+            // TODO: Navigate to deal details page or show modal
+            console.log('Viewing deal:', dealId);
+            alert('Deal details view coming soon');
+        }
+
+        // Load initial data
+        loadAvailableDeals();
+        loadMyOffers();
+    </script>
+</body>
+</html>

@@ -43,6 +43,7 @@ from routes.profit_simulator import profit_bp
 from routes.field_monitoring import fm_bp
 from routes.weather import weather_bp
 from routes.redemption_store import redemption_bp
+from routes.buyer_auth import buyer_auth_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(onboarding_bp)
@@ -56,6 +57,7 @@ app.register_blueprint(profit_bp)
 app.register_blueprint(fm_bp)
 app.register_blueprint(weather_bp)
 app.register_blueprint(redemption_bp)
+app.register_blueprint(buyer_auth_bp)
 
 # ----------------------- ROUTES -----------------------
 

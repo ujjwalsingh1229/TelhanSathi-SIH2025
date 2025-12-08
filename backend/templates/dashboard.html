@@ -1,540 +1,514 @@
 {% extends "base.html" %}
 
-{% block title %}Telhan Sathi - Home{% endblock %}
+{% block title %}Telhan Sathi - डैशबोर्ड{% endblock %}
 
 {% block style %}
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
-        /* 2. IMAGE CAROUSEL Styles (moved from base to ensure it's not on other pages) */
+        :root {
+            --green-main: #388e3c;
+            --green-dark: #2e7d32;
+            --green-light: #E8F5E9;
+            --green-border: #C8E6C9;
+            --text: #222;
+            --muted: #5a5a5a;
+        }
+
+        /* ==================== CAROUSEL ==================== */
         .carousel-container {
             width: 100%;
-            aspect-ratio: 16 / 9; /* 16:9 ratio */
             overflow: hidden;
             position: relative;
-            background-color: #e0e0e0;
+            background: transparent;
         }
 
         .carousel-track {
             display: flex;
-            width: 400%; /* 4 images * 100% */
-            transition: transform 0.5s ease-in-out;
+            transition: transform .5s ease;
         }
 
         .carousel-slide {
-            width: 25%; /* 100% / 4 images */
-            flex-shrink: 0;
+            min-width: 100%;
         }
 
         .carousel-slide img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 0;
+            height: auto;
+            object-fit: contain;
         }
-        
-        /* 3. MAIN FEATURES (5 Icons) - COMPLEX 3x2 GRID */
+
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.12);
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .carousel-arrow.prev {
+            left: 10px;
+        }
+
+        .carousel-arrow.next {
+            right: 10px;
+        }
+
+        .carousel-indicators {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+        }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+        }
+
+        .indicator.active {
+            background: #fff;
+        }
+
+        /* ==================== FEATURE SECTION ==================== */
+        .feature-section {
+            max-width: 1100px;
+            margin: 18px auto;
+            padding: 12px;
+            border: 1px solid var(--green-border);
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .feature-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-left: 6px;
+        }
+
         .feature-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* Two columns */
-            grid-template-rows: repeat(3, auto); /* Three rows */
-            grid-template-areas:
-                "item1 item4"
-                "item2 item5"
-                "item3 item6"; /* Item 6 replaces item5 in R3 C2 */
-            gap: 10px;
-            text-align: center;
-            margin-top: 15px;
-            padding: 0 15px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
 
-        /* Assigning grid areas and base styles for blocks */
-        .feature-item {
-            font-size: 11px;
-            color: #444;
-            cursor: pointer;
-            background-color: #fff;
-            border-radius: 12px;
-            padding: 10px 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.12s ease, box-shadow 0.12s ease;
-            text-decoration: none; /* Inherited from a tag */
-            display: block;
-        }
-
-        .feature-item:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-        }
-
-        /* Grid area assignments */
-        .feature-item:nth-child(1) { grid-area: item1; }
-        .feature-item:nth-child(2) { grid-area: item2; }
-        .feature-item:nth-child(3) { grid-area: item3; }
-        .feature-item:nth-child(4) { grid-area: item4; }
-        .feature-item:nth-child(5) { grid-area: item5; }
-        .feature-item:nth-child(6) { grid-area: item6; }
-
-        /* Icon wrapper styling */
-        .feature-icon-wrapper {
-            width: 50px;
-            height: 50px;
-            background-color: #c8e6c9;
-            border-radius: 12px;
+        .feature-card {
+            background: #fff;
+            border: 1px solid var(--green-border);
+            border-radius: 8px;
+            padding: 12px 10px;
+            min-height: 86px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            margin: 0 auto 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            justify-content: center;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--green-light);
+            border: 1px solid var(--green-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .feature-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--green-main);
+        }
+
+        .feature-label {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* ==================== SPECIAL SECTION ==================== */
+        .special-section {
+            max-width: 1100px;
+            margin: 8px auto;
+            padding: 12px;
+            padding-top: 2px;
+        }
+
+        /* Full width special card */
+        .special-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--green-light);
+            border: 1px solid var(--green-border);
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 14px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .special-card-icon {
+            width: 44px;
+            height: 44px;
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid var(--green-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
             flex-shrink: 0;
         }
 
-        .feature-item:nth-child(5) .feature-icon-wrapper {
-             /* Make the icon slightly larger in the spanning block */
-            width: 60px;
-            height: 60px;
-            border-radius: 50%; /* Make it circular */
+        .special-card-icon img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
         }
 
-        .feature-icon-wrapper svg {
-            width: 24px;
-            height: 24px;
-            fill: #388e3c;
-        }
-
-
-        /* 4. BEST OFFER BLOCK */
-        .offer-block {
-            background: linear-gradient(90deg, #fff3e0 0%, #ffe0b2 100%);
-            border-radius: 12px;
-            padding: 15px;
-            margin: 20px 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            border: 1px solid #ffcc80;
-        }
-        
-        .offer-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #d84315;
-            margin-bottom: 5px;
-        }
-        
-        .offer-details {
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* 5. 4 ICON ACTION SECTION */
-        .action-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            text-align: center;
-            margin: 20px 15px;
-        }
-        
-        .action-item {
-            font-size: 11px;
-            color: #444;
-            cursor: pointer;
-        }
-
-        .action-icon-wrapper {
-            width: 100%;
-            max-width: 60px;
-            height: 60px;
-            background-color: #e8f5e9;
-            border-radius: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0 auto 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .action-icon-wrapper svg {
-            width: 24px;
-            height: 24px;
-            fill: #388e3c;
-        }
-
-        /* 6. HORIZONTAL SCROLLING IMAGE/BUTTON SECTION */
-        .image-button-section {
-            margin-bottom: 20px;
-        }
-        
-        .section-header {
+        .special-card-title {
             font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            margin: 0 15px 10px;
+            font-weight: 700;
+            color: var(--green-dark);
         }
 
-        .section-padding { /* Re-declared to ensure padding works within content block */
-            padding: 10px 15px;
+        .special-card-sub {
+            font-size: 13px;
+            color: #444;
+            margin-top: 2px;
         }
 
-        .image-scroll-container {
+        /* Row of two half-width cards */
+        .row-two {
             display: flex;
-            overflow-x: scroll;
-            padding: 0 15px;
-            gap: 10px;
-            /* Hide scrollbar */
-            -ms-overflow-style: none; /* IE and Edge */
-            scrollbar-width: none; /* Firefox */
+            gap: 12px;
         }
 
-        .image-scroll-container::-webkit-scrollbar {
+        .row-card {
+            flex: 1;
+            background: var(--green-light);
+            border: 1px solid var(--green-border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .row-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .row-icon {
+            width: 36px;
+            height: 36px;
+            background: #fff;
+            border-radius: 50%;
+            border: 1px solid var(--green-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .row-icon .material-symbols-outlined {
+            font-size: 20px;
+            color: var(--green-dark);
+        }
+
+        /* ==================== 3-CARD SLIDER ==================== */
+        .info-slider-section-2 {
+            width: 100%;
+            background: #ffffff;
+            padding: 18px 0 22px;
+            border-top: 1px solid var(--green-border);
+            border-bottom: 1px solid var(--green-border);
+        }
+
+        .info-slider-container-2 {
+            max-width: 1100px;
+            margin: 0 auto;
+            overflow-x: auto;
+            display: flex;
+            gap: 14px;
+            padding: 0 12px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+        }
+
+        .info-slider-container-2::-webkit-scrollbar {
             display: none;
         }
 
-        .image-card {
-            flex-shrink: 0;
-            width: 160px; /* Fixed width for card */
-            height: 180px; /* Fixed height for card */
-            border-radius: 12px;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        .info-card-slide-2 {
+            flex: 0 0 82%;
+            max-width: 360px;
+            background: #fff;
+            border: 1px solid var(--green-border);
+            border-radius: 14px;
             overflow: hidden;
+            scroll-snap-align: start;
             cursor: pointer;
-            position: relative;
+            text-decoration: none;
         }
-        
-        .image-card img {
+
+        .info-card-img-2 {
             width: 100%;
-            height: 100%;
+            height: 155px;
             object-fit: cover;
         }
-             /* 7. FLOATING SAHAYAK BUTTON - CENTER ALIGNED */
-        .sahayak-float {
-            position: fixed;
-            bottom: 80px;
-            left: 50%; /* Center the button */
-            transform: translateX(-50%); /* Offset by half its width for true center */
-            z-index: 200;
-            background-color: #ff9800; /* Orange background */
-            color: #fff;
-            border-radius: 30px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            transition: width 0.3s ease, padding 0.3s ease, transform 0.3s ease;
-            cursor: pointer;
-            overflow: hidden;
-            /* Ensure it is only visible within the .frame max-width */
-            max-width: calc(100% - 40px); 
+
+        .info-card-content-2 {
+            padding: 14px 16px;
+            position: relative;
         }
 
-        .sahayak-float.scrolling {
-            width: 45px; /* Icon width */
-            padding: 10px;
-            /* Collapse text and add subtle scaling animation */
-            transform: translateX(-50%) scale(0.95); 
+        .info-card-title-2 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--green-dark);
         }
 
-        .sahayak-float svg {
-            width: 25px;
-            height: 25px;
-            fill: #fff;
-            flex-shrink: 0;
+        .info-card-sub-2 {
+            font-size: 13.5px;
+            color: #4d4d4d;
+            line-height: 1.4;
+            margin-right: 30px;
         }
 
-        .sahayak-text {
-            font-weight: bold;
-            font-size: 14px;
-            margin-left: 8px;
-            white-space: nowrap;
-            opacity: 1;
-            transition: opacity 0.3s ease;
+        .info-card-arrow-2 {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            font-size: 20px;
+            color: var(--green-dark);
         }
 
-        .sahayak-float.scrolling .sahayak-text {
-            opacity: 0;
+        @media(min-width:800px) {
+            .info-card-slide-2 {
+                flex: 0 0 320px;
+            }
+        }
+
+        .dashboard-container {
+            padding-bottom: 80px;
         }
     </style>
 {% endblock %}
 
 
 {% block content %}
-    
-    <div class="carousel-container">
-        <div class="carousel-track" id="carousel-track">
-            <div class="carousel-slide"><img src="https://placehold.co/800x450/4CAF50/ffffff?text=Oilseed+Farming+Innovation" alt="Slide 1"></div>
-            <div class="carousel-slide"><img src="https://placehold.co/800x450/388E3C/ffffff?text=Subsidy+Schemes+Announced" alt="Slide 2"></div>
-            <div class="carousel-slide"><img src="https://placehold.co/800x450/66BB6A/ffffff?text=Accurate+Weather+Forecast" alt="Slide 3"></div>
-            <div class="carousel-slide"><img src="https://placehold.co/800x450/81C784/ffffff?text=Live+Market+Prices+for+Mustard" alt="Slide 4"></div>
-        </div>
+
+<div class="dashboard-container">
+
+  <!-- ================================================ CAROUSEL ================================================ -->
+  <div class="carousel-container">
+    <button class="carousel-arrow prev" onclick="prevSlide()">❮</button>
+
+    <div class="carousel-track" id="carousel-track">
+      <div class="carousel-slide"><img src="/static/img/1.png"></div>
+      <div class="carousel-slide"><img src="/static/img/2.png"></div>
+      <div class="carousel-slide"><img src="/static/img/3.png"></div>
+      <div class="carousel-slide"><img src="/static/img/4.png"></div>
     </div>
+
+    <button class="carousel-arrow next" onclick="nextSlide()">❯</button>
+
+    <div class="carousel-indicators">
+      <div class="indicator active" onclick="goToSlide(0)"></div>
+      <div class="indicator" onclick="goToSlide(1)"></div>
+      <div class="indicator" onclick="goToSlide(2)"></div>
+      <div class="indicator" onclick="goToSlide(3)"></div>
+    </div>
+  </div>
+
+  <!-- ================================================ उपकरण ================================================ -->
+  <section class="feature-section">
+    <div class="feature-title">उपकरण</div>
 
     <div class="feature-grid">
-        <a href="{{ url_for('market.select_crop') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                </div>
-                Market place
-            </div>
-        </a>
-        <a href="{{ url_for('weather.dashboard') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v6h-2z"/></svg>
-                </div>
-                Weather Forecast
-            </div>
-        </a>
-        
-        <a href="{{ url_for('profit.simulator_page') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.46 5.36 5.82 7.93 5.82 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-                </div>
-                profit simulator
-            </div>
-        </a>
 
-        <a href="{{ url_for('subsidies.subsidies_list') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h-2V7h2v9zm4 0h-2V7h2v9z"/></svg>
-                </div>
-                Govt. Schemes
-            </div>
-        </a>
-        
-        <a href="{{ url_for('crop_economics.dashboard') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 9.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5z"/></svg>
-                </div>
-                Crop Economics
-            </div>
-        </a>
-        <a href="{{ url_for('field_monitoring.dashboard') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L1 21h22L12 2zm0 4.96L17.7 18H6.3L12 6.96zM13 16h-2v-4h-2v4zm0-6h-2V8h2v2z"/></svg>
-                </div>
-                field monitoring
-            </div>
-        </a>
-        <a href="{{ url_for('redemption.redemption_store') }}" style="text-decoration: none; color: inherit;">
-            <div class="feature-item">
-                <div class="feature-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
-                </div>
-                Redemption Store
-            </div>
-        </a>
+      <a href="{{ url_for('market.select_crop') }}" class="feature-card" style="text-decoration: none; color: inherit;">
+        <div class="feature-icon">
+          <span class="material-symbols-outlined">shopping_cart</span>
+        </div>
+        <div class="feature-label">मार्केट प्लेस</div>
+      </a>
+
+      <a href="{{ url_for('weather.dashboard') }}" class="feature-card" style="text-decoration: none; color: inherit;">
+        <div class="feature-icon">
+          <span class="material-symbols-outlined">cloud</span>
+        </div>
+        <div class="feature-label">मौसम पूर्वानुमान</div>
+      </a>
+
+      <a href="{{ url_for('profit.simulator_page') }}" class="feature-card" style="text-decoration: none; color: inherit;">
+        <div class="feature-icon">
+          <span class="material-symbols-outlined">bar_chart</span>
+        </div>
+        <div class="feature-label">लाभ सिम्युलेटर</div>
+      </a>
+
+      <a href="{{ url_for('subsidies.subsidies_list') }}" class="feature-card" style="text-decoration: none; color: inherit;">
+        <div class="feature-icon">
+          <span class="material-symbols-outlined">account_balance</span>
+        </div>
+        <div class="feature-label">सरकारी योजनाएँ</div>
+      </a>
+
+      <a href="{{ url_for('crop_economics.dashboard') }}" class="feature-card" style="text-decoration: none; color: inherit;">
+        <div class="feature-icon">
+          <span class="material-symbols-outlined">eco</span>
+        </div>
+        <div class="feature-label">फसल अर्थशास्त्र</div>
+      </a>
+
+      <a href="{{ url_for('redemption.redemption_store') }}" class="feature-card" style="text-decoration: none; color: inherit;">
+        <div class="feature-icon">
+          <span class="material-symbols-outlined">redeem</span>
+        </div>
+        <div class="feature-label">रिडेम्पशन</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ================================================ SPECIAL SECTION ================================================ -->
+  <section class="special-section">
+
+    <!-- SPECIAL FULL WIDTH CARD -->
+    <a href="{{ url_for('field_monitoring.dashboard') }}" class="special-card" style="text-decoration: none; color: inherit;">
+      <div class="special-card-icon">
+        <img src="https://cdn-icons-png.freepik.com/512/1055/1055641.png" alt="">
+      </div>
+
+      <div>
+        <div class="special-card-title">विशेष: खेत मॉनिटरिंग सिस्टम</div>
+        <div class="special-card-sub">रीयल-टाइम फसल स्वास्थ्य, मिट्टी की स्थिति और सैटेलाइट अपडेट।</div>
+      </div>
+    </a>
+
+    <!-- TWO HALF-WIDTH CARDS -->
+    <div class="row-two">
+
+      <div class="row-card" onclick="alert('लीडरबोर्ड')">
+        <div class="row-title">लीडरबोर्ड</div>
+        <div class="row-icon"><span class="material-symbols-outlined">emoji_events</span></div>
+      </div>
+
+      <div class="row-card" onclick="alert('स्टोर')">
+        <div class="row-title">स्टोर</div>
+        <div class="row-icon"><span class="material-symbols-outlined">storefront</span></div>
+      </div>
+
     </div>
 
-    <div class="offer-block" id="best-offer-block" onclick="goToRedemptionStore()">
-        <div class="offer-title" id="offer-title">Loading Best Offer...</div>
-        <div class="offer-details" id="offer-details">Checking available offers for you...</div>
-    </div>
-    <div class="sahayak-float" id="sahayak-button" onclick="alertBox('Opening AI Chatbot!')">
-            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 11c0-1.1.9-2 2-2h6c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-2v1h-2v-1H7v-2zm2 0v2h6v-2H9z"/>
-            </svg>
-            <span class="sahayak-text">Sahayak</span>
+  </section>
+
+  <!-- ======================= 3-CARD SLIDER (SCHEMES + IoT + PLATFORM) ======================= -->
+  <div class="info-slider-section-2">
+    <div class="info-slider-container-2">
+
+      <!-- CARD 1: Subsidy & Govt Schemes -->
+      <a href="{{ url_for('subsidies.subsidies_list') }}" class="info-card-slide-2" style="text-decoration: none; color: inherit;">
+        <img class="info-card-img-2" src="/static/img/1.png">
+        <div class="info-card-content-2">
+          <div class="info-card-title-2">सब्सिडी व सरकारी योजनाएँ</div>
+          <div class="info-card-sub-2">
+            सभी कृषि योजनाएँ, पात्रता, दस्तावेज़ और सब्सिडी जानकारी — आसान भाषा में, एक ही जगह पर उपलब्ध।
+          </div>
+          <span class="material-symbols-outlined info-card-arrow-2">arrow_forward</span>
         </div>
-    <div class="section-header section-padding">Core Actions</div>
-    <div class="action-grid">
-        <div class="action-item">
-            <div class="action-icon-wrapper">
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2h8v2H6zm10-3H6V9h10v2zm0-3H6V5h10v3z"/></svg>
-            </div>
-            Support
+      </a>
+
+      <!-- CARD 2: IoT आधारित स्मार्ट कृषि -->
+      <a href="{{ url_for('field_monitoring.dashboard') }}" class="info-card-slide-2" style="text-decoration: none; color: inherit;">
+        <img class="info-card-img-2"
+          src="/static/img/2.jpg"
+          <div class="info-card-title-2">IoT आधारित स्मार्ट कृषि</div>
+          <div class="info-card-sub-2">
+            सेंसर्स, लाइव डेटा, मिट्टी नमी, तापमान और फसल स्थिति — पूरी खेती का रियल-टाइम वैज्ञानिक विश्लेषण।
+          </div>
+          <span class="material-symbols-outlined info-card-arrow-2">arrow_forward</span>
         </div>
-        <div class="action-item">
-            <div class="action-icon-wrapper">
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.55l8-4V4.45l-8 4-8-4v3.1l8 4zM20 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-2.14-5.26l-5.86 2.76v7.38l6-3V11.8c0-.6-.4-1.1-.94-1.34z"/></svg>
-            </div>
-            Leaderboard
+      </a>
+
+      <!-- CARD 3: आपका डिजिटल कृषि प्लेटफ़ॉर्म -->
+      <a href="/" class="info-card-slide-2" style="text-decoration: none; color: inherit;">
+        <img class="info-card-img-2" src="/static/img/3.png">
+        <div class="info-card-content-2">
+          <div class="info-card-title-2">आपका संपूर्ण कृषि प्लेटफ़ॉर्म</div>
+          <div class="info-card-sub-2">
+            बाजार, मौसम, लाभ सिम्युलेटर, योजनाएँ, आर्थिक विश्लेषण, मॉनिटरिंग — सब कुछ एक ऐप में।
+          </div>
+          <span class="material-symbols-outlined info-card-arrow-2">arrow_forward</span>
         </div>
-        <div class="action-item">
-            <div class="action-icon-wrapper">
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/></svg>
-            </div>
-            Store
-        </div>
-        <div class="action-item">
-            <div class="action-icon-wrapper">
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19 8h-1V3H6v5H5v13h14V8zM8 5h8v3H8V5zm8 14H8v-9h8v9z"/></svg>
-            </div>
-            More
-        </div>
-    </div>
+      </a>
     
-    <div class="image-button-section">
-        <div class="section-header section-padding" style="padding-bottom: 5px;">Quick Links</div>
-        <div class="image-scroll-container" id="image-scroll-container">
-            <div class="image-card" onclick="this.classList.add('animate-up'); setTimeout(() => this.classList.remove('animate-up'), 200); alertBox('Navigating to Crop Management')">
-                <img src="https://placehold.co/320x360/388e3c/ffffff?text=Crop+Mgmt" alt="Crop Management">
-            </div>
-            <div class="image-card" onclick="this.classList.add('animate-up'); setTimeout(() => this.classList.remove('animate-up'), 200); alertBox('Navigating to Finance')">
-                <img src="https://placehold.co/320x360/4caf50/ffffff?text=Loan+%26+Finance" alt="Loan & Finance">
-            </div>
-            <div class="image-card" onclick="this.classList.add('animate-up'); setTimeout(() => this.classList.remove('animate-up'), 200); alertBox('Navigating to Equipment Rental')">
-                <img src="https://placehold.co/320x360/66bb6a/ffffff?text=Equipment" alt="Equipment">
-            </div>
-            <div class="image-card" onclick="this.classList.add('animate-up'); setTimeout(() => this.classList.remove('animate-up'), 200); alertBox('Navigating to Soil Health')">
-                <img src="https://placehold.co/320x360/81c784/ffffff?text=Soil+Test" alt="Soil Health">
-            </div>
-        </div>
-    </div>
-{% endblock %}
 
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
 
 {% block script %}
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const carouselTrack = document.getElementById('carousel-track');
-            const slides = document.querySelectorAll('.carousel-slide');
-            const slideCount = slides.length;
-            let currentIndex = 0;
-            let isSwiping = false;
-            let startX = 0;
-            let carouselTimer;
+        let currentIndex = 0;
+        const track = document.getElementById('carousel-track');
+        const slides = document.querySelectorAll('.carousel-slide');
+        const indicators = document.querySelectorAll('.indicator');
+        const total = slides.length;
 
-            function updateCarousel() {
-                const pct = (currentIndex * 100) / slideCount;
-                carouselTrack.style.transform = `translateX(-${pct}%)`;
-            }
-
-            function nextSlide() {
-                currentIndex = (currentIndex + 1) % slideCount;
-                updateCarousel();
-            }
-
-            function startAutoSlide() {
-                clearInterval(carouselTimer);
-                carouselTimer = setInterval(nextSlide, 4000); // Auto slide every 4 seconds
-            }
-
-            // Manual swipe start
-            carouselTrack.addEventListener('mousedown', (e) => {
-                isSwiping = true;
-                startX = e.clientX;
-                carouselTrack.style.transition = 'none';
-                clearInterval(carouselTimer); // Pause auto-slide
-            });
-            carouselTrack.addEventListener('touchstart', (e) => {
-                isSwiping = true;
-                startX = e.touches[0].clientX;
-                carouselTrack.style.transition = 'none';
-                clearInterval(carouselTimer); // Pause auto-slide
-            });
-
-            // Manual swipe move
-            carouselTrack.addEventListener('mousemove', (e) => {
-                if (!isSwiping) return;
-                const currentX = e.clientX;
-                const diff = startX - currentX;
-                // Move track based on mouse movement
-                const pctBase = (currentIndex * 100) / slideCount;
-                carouselTrack.style.transform = `translateX(calc(-${pctBase}% - ${diff}px))`;
-            });
-            carouselTrack.addEventListener('touchmove', (e) => {
-                if (!isSwiping) return;
-                const currentX = e.touches[0].clientX;
-                const diff = startX - currentX;
-                const pctBase = (currentIndex * 100) / slideCount;
-                carouselTrack.style.transform = `translateX(calc(-${pctBase}% - ${diff}px))`;
-            });
-
-            // Manual swipe end
-            const handleSwipeEnd = (endX) => {
-                if (!isSwiping) return;
-                isSwiping = false;
-                carouselTrack.style.transition = 'transform 0.5s ease-in-out';
-                const diff = startX - endX;
-                const threshold = 50; // Minimum swipe distance
-
-                if (diff > threshold) {
-                    // Swipe left (move to next slide)
-                    currentIndex = (currentIndex + 1) % slideCount;
-                } else if (diff < -threshold) {
-                    // Swipe right (move to previous slide)
-                    currentIndex = (currentIndex - 1 + slideCount) % slideCount;
-                }
-                
-                updateCarousel();
-                startAutoSlide(); // Resume auto-sliding
-            };
-
-            carouselTrack.addEventListener('mouseup', (e) => handleSwipeEnd(e.clientX));
-            carouselTrack.addEventListener('touchend', (e) => {
-                if (e.changedTouches.length > 0) {
-                    handleSwipeEnd(e.changedTouches[0].clientX);
-                }
-            });
-            carouselTrack.addEventListener('mouseleave', () => {
-                if(isSwiping) handleSwipeEnd(startX); // Treat mouse leave as swipe end
-            });
-
-            // Initialize carousel
-            updateCarousel();
-            startAutoSlide();
-
-            // Load best offer on page load
-            loadBestOffer();
-        });
-
-        async function loadBestOffer() {
-            try {
-                const resp = await fetch('/redemption/api/best-offer', { credentials: 'same-origin' });
-                
-                if (resp.status === 401) {
-                    // Not logged in, hide offer
-                    document.getElementById('best-offer-block').style.display = 'none';
-                    return;
-                }
-                
-                if (!resp.ok) throw new Error('Failed to load best offer');
-                
-                const data = await resp.json();
-                console.log('Best offer:', data);
-                
-                const titleEl = document.getElementById('offer-title');
-                const detailsEl = document.getElementById('offer-details');
-                const blockEl = document.getElementById('best-offer-block');
-                
-                if (data.has_offer) {
-                    const offer = data.offer;
-                    
-                    if (data.can_redeem) {
-                        // User has enough coins
-                        titleEl.innerHTML = `✅ ${offer.icon} ${offer.title}`;
-                        detailsEl.innerHTML = `
-                            <div style="margin-bottom: 8px;">🎁 You can redeem this! Cost: <strong>${offer.coin_cost} 🪙</strong></div>
-                            <div style="font-size: 11px; color: #666;">${offer.description}</div>
-                        `;
-                        blockEl.style.cursor = 'pointer';
-                    } else {
-                        // User needs more coins
-                        titleEl.innerHTML = `🚀 ${offer.icon} ${offer.title}`;
-                        detailsEl.innerHTML = `
-                            <div style="margin-bottom: 8px;">💰 Earn <strong>${data.coins_needed} more coins</strong> to redeem!</div>
-                            <div style="font-size: 11px; color: #666;">Cost: ${offer.coin_cost} 🪙 | You have: ${data.available_coins} 🪙</div>
-                        `;
-                        blockEl.style.cursor = 'pointer';
-                    }
-                } else {
-                    titleEl.innerHTML = '🎁 Exclusive Offers Awaiting!';
-                    detailsEl.innerHTML = 'Complete activities to earn coins and unlock amazing redemption offers!';
-                    blockEl.style.cursor = 'pointer';
-                }
-            } catch (err) {
-                console.error('Error loading best offer:', err);
-                document.getElementById('offer-title').innerHTML = '🎁 Redemption Offers';
-                document.getElementById('offer-details').innerHTML = 'Tap to explore and redeem with coins!';
-            }
+        function updateCarousel() {
+            track.style.transform = `translateX(-${currentIndex * 100}%)`;
+            indicators.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
         }
 
-        function goToRedemptionStore() {
-            window.location.href = '{{ url_for("redemption.redemption_store") }}';
+        function nextSlide() { currentIndex = (currentIndex + 1) % total; updateCarousel(); }
+        function prevSlide() { currentIndex = (currentIndex - 1 + total) % total; updateCarousel(); }
+        function goToSlide(i) { currentIndex = i; updateCarousel(); }
+
+        let auto = setInterval(nextSlide, 5000);
+
+        // Pause auto-slide on manual interaction
+        track.addEventListener('mousedown', () => { clearInterval(auto); });
+        track.addEventListener('touchstart', () => { clearInterval(auto); });
+
+        function goToOfferPage() {
+            window.location.href = "{{ url_for('redemption.redemption_store') }}";
         }
     </script>
 {% endblock %}

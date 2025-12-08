@@ -306,12 +306,16 @@
         }
 
         function formatDate(dateStr) {
-            try {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-            } catch {
-                return dateStr;
+            // Handle null/empty
+            if (!dateStr) return '-';
+
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                // Invalid date — return raw string or placeholder
+                return dateStr || '-';
             }
+
+            return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
         }
 
         function formatDateTime(dateStr) {

@@ -3,376 +3,502 @@
 {% block title %}{{ crop }} Sell Harvest - Telhan Sathi{% endblock %}
 
 {% block style %}
-    <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-green: #2E7D32;
-            --light-green: #E8F5E9;
-            --slider-track: #e6e6e6;
-            --slider-fill: #C8E6C9;
-            --thumb-border: #D4AF37;
-            --text-dark: #1e3a24;
-            --white: #ffffff;
-            --gold: #D4AF37;
+            /* Palette: Earth & Harvest */
+            --primary-green: #2d6a4f; /* Deep Leaf Green */
+            --accent-green: #52b788;  /* Fresh Shoot Green */
+            --harvest-gold: #ffb703;  /* Ripe Crop Gold */
+            --soil-dark: #1f2421;     /* Dark Earth Text */
+            --off-white: #f8f9fa;
+            --surface-white: #ffffff;
+            --shadow-soft: 0 8px 30px rgba(0,0,0,0.08);
+            --radius-lg: 24px;
+            --radius-md: 16px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Hind', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: #f5f5f5;
-            color: var(--text-dark);
+            font-family: 'Hind', sans-serif;
+            background-color: #f1f4f0;
+            /* Subtle topographic agricultural pattern */
+            background-image: radial-gradient(#2d6a4f 0.5px, transparent 0.5px), radial-gradient(#2d6a4f 0.5px, #f1f4f0 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            color: var(--soil-dark);
             min-height: 100vh;
             display: flex;
             justify-content: center;
+            padding: 20px 0;
         }
 
         .app-container {
             width: 100%;
-            max-width: 450px;
-            background-color: var(--white);
-            min-height: 100vh;
+            max-width: 480px;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            min-height: 95vh; /* Slightly floating on desktop */
             display: flex;
             flex-direction: column;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
         }
 
-       
+        /* Decorative Header Leaf */
+        .app-container::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: var(--accent-green);
+            opacity: 0.1;
+            border-radius: 50%;
+            z-index: 0;
+        }
 
-        .content {
-            padding: 20px;
-            flex: 1;
+        /* --- Header Section --- */
+        .header {
+            padding: 25px 25px 10px 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 28px;
+            color: var(--primary-green);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        /* --- Crop Badge (Floating) --- */
+        .crop-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
         }
 
         .crop-badge {
             display: inline-flex;
             align-items: center;
-            background: var(--light-green);
-            padding: 8px 16px;
-            border-radius: 20px;
-            color: var(--primary-green);
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            padding: 6px 16px;
+            border-radius: 50px;
+            color: white;
             font-weight: 600;
-            margin-bottom: 24px;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
         }
 
-        .crop-badge span { margin-left: 8px; }
+        .content {
+            padding: 25px;
+            flex: 1;
+            z-index: 1;
+        }
 
-        /* --- 1. QUANTITY SECTION --- */
-        .input-section {
-            margin-bottom: 25px;
-            background: #fff;
+        /* --- Section Styling --- */
+        .section-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #eef0f2;
         }
 
         .label-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-weight: 600;
-            font-size: 16px;
+            align-items: baseline;
+            margin-bottom: 12px;
         }
 
-        .unit { color: #888; font-size: 14px; }
+        .input-label {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary-green);
+        }
 
-        /* Slider Styles */
-        .range-wrapper {
+        .unit-badge {
+            font-size: 12px;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #495057;
+        }
+
+        /* --- 1. Custom Slider --- */
+        .range-container {
             position: relative;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
+            padding: 10px 0;
         }
 
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
-            z-index: 2;
-            position: relative;
         }
-
-        input[type=range]:focus { outline: none; }
 
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 12px;
             cursor: pointer;
-            background: var(--slider-track);
+            background: #e9ecef;
             border-radius: 10px;
         }
 
         input[type=range]::-webkit-slider-thumb {
-            height: 32px;
-            width: 32px;
+            height: 28px;
+            width: 28px;
             border-radius: 50%;
-            background: var(--white);
-            border: 4px solid var(--thumb-border);
+            background: var(--surface-white);
+            border: 6px solid var(--primary-green);
             cursor: pointer;
             -webkit-appearance: none;
-            margin-top: -10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            margin-top: -9px; /* Centers thumb */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             position: relative;
-            z-index: 3;
+            z-index: 2;
         }
 
-        .slider-progress {
+        .slider-fill {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
             left: 0;
             height: 12px;
-            background: var(--slider-fill);
+            background: var(--primary-green);
             border-radius: 10px;
-            width: 50%;
-            z-index: 1;
+            z-index: 0;
+            pointer-events: none;
         }
 
         .manual-input {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 8px;
             width: 100%;
             text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--text-dark);
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-top: 15px;
+            font-family: 'Outfit', sans-serif;
+            transition: border-color 0.3s;
+        }
+        
+        .manual-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
         }
 
-        /* --- 2. PRICE INPUT SECTION (NEW) --- */
-        .price-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-
-        .price-box {
-            flex: 1;
-        }
-
-        .price-input-wrapper {
+        /* --- 2. Price Input --- */
+        .price-wrapper {
             position: relative;
+            display: flex;
+            align-items: center;
         }
 
-        .currency-symbol {
+        .currency-icon {
             position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
+            left: 16px;
             font-weight: bold;
+            color: #adb5bd;
+            font-size: 20px;
         }
 
         .price-input {
             width: 100%;
-            padding: 12px 12px 12px 30px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--text-dark);
+            padding: 15px 15px 15px 40px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--soil-dark);
+            font-family: 'Outfit', sans-serif;
         }
-        
+
         .price-input:focus {
-            border-color: var(--primary-green);
             outline: none;
+            border-color: var(--primary-green);
+            background: #f8fff9;
         }
 
-        .market-ref {
-            font-size: 12px;
-            color: var(--primary-green);
-            margin-top: 5px;
-            display: flex;
+        .market-tag {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-flex;
             align-items: center;
+            gap: 6px;
         }
 
-        /* --- 3. TOTAL EARNINGS CARD --- */
+        /* --- 3. Hero Earnings Card --- */
         .earnings-card {
-            background: var(--white);
-            border: 2px solid var(--light-green);
-            border-radius: 16px;
-            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-green), #1b4332);
+            color: white;
+            border-radius: 20px;
+            padding: 25px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(45, 106, 79, 0.3);
             position: relative;
             overflow: hidden;
         }
-        
-        /* Decorative background circle */
-        .earnings-card::before {
+
+        /* Golden glow effect */
+        .earnings-card::after {
             content: '';
             position: absolute;
-            top: -20px;
-            right: -20px;
-            width: 80px;
-            height: 80px;
-            background: var(--light-green);
-            border-radius: 50%;
-            opacity: 0.5;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--harvest-gold) 0%, transparent 70%);
+            opacity: 0.2;
         }
 
-        .earnings-label {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
+        .earnings-title {
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
         }
 
-        .total-amount {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--primary-green);
-            display: block;
-            line-height: 1.2;
+        .total-display {
+            font-family: 'Outfit', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            margin: 5px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
-        .math-breakdown {
+
+        .breakdown-pill {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 14px;
-            color: #888;
-            margin-top: 5px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* --- Form Fields --- */
-        .form-group { margin-bottom: 24px; }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-dark);
-        }
+        /* --- 4. Date & Photos --- */
         .date-input {
             width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
+            padding: 16px;
+            border: 2px solid #e9ecef;
             border-radius: 12px;
             font-size: 16px;
-            background: #fff;
+            color: var(--soil-dark);
+            font-family: 'Hind', sans-serif;
+            background: white;
         }
 
-        /* Footer */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .photo-upload-box {
+            aspect-ratio: 1;
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-upload-box:active {
+            transform: scale(0.98);
+            background: #e9ecef;
+        }
+
+        .photo-upload-box i {
+            font-size: 24px;
+            color: #adb5bd;
+            margin-bottom: 4px;
+        }
+
+        .photo-upload-box span {
+            font-size: 10px;
+            color: #adb5bd;
+            font-weight: 600;
+        }
+
+        .photo-upload-box.has-image {
+            border-style: solid;
+            border-color: var(--primary-green);
+        }
+
+        .uploaded-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+
+        /* --- Footer --- */
         .footer-actions {
             padding: 20px;
-            background: var(--white);
-            border-top: 1px solid #eee;
+            background: white;
+            border-top: 1px solid #f0f0f0;
             position: sticky;
             bottom: 0;
+            z-index: 10;
         }
 
         .btn-submit {
             width: 100%;
-            background: var(--primary-green);
-            color: white;
+            background: var(--harvest-gold);
+            color: #3e2c00; /* Dark contrast for gold */
             border: none;
-            padding: 16px;
-            border-radius: 12px;
+            padding: 18px;
+            border-radius: 16px;
             font-size: 18px;
             font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 15px rgba(255, 183, 3, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
-            cursor: pointer;
+            gap: 10px;
         }
-        
-        /* Photo grid styling (Compact) */
-        .photo-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .photo-box {
-            aspect-ratio: 1;
-            background: #f9f9f9;
-            border: 2px dashed #ccc;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            overflow: hidden;
-            position: relative;
+
+        .btn-submit:active {
+            transform: scale(0.98);
         }
-        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
-        .photo-box.has-image { border: 2px solid var(--primary-green); }
 
     </style>
 {% endblock %}
+
 {% block content %}
 <div class="app-container">
-        <h2>Sell Your Harvest</h2>
-
+    <div class="header">
+        <div class="page-title">Sell Harvest</div>
+        <div class="subtitle">Create a new listing for buyers</div>
+        
+        <div class="crop-header">
+            <div class="crop-badge">
+                <i class="fas fa-leaf" style="margin-right: 8px;"></i>
+                <span id="cropNameDisplay">Mustard</span>
+            </div>
+        </div>
+    </div>
 
     <div class="content">
-        <div class="crop-badge">
-            <span id="cropNameDisplay">Mustard</span>
+        <div class="earnings-card">
+            <div class="earnings-title">Est. Total Income (कुल आय)</div>
+            <div class="total-display" id="totalMath">₹0</div>
+            <div class="breakdown-pill">
+                <span id="qtyMath">0</span> Qtl × ₹<span id="priceMath">0</span>
+            </div>
         </div>
 
-        <div class="input-section">
+        <div class="section-card">
             <div class="label-row">
-                <span>Quantity (मात्रा)</span>
-                <span class="unit">Quintals</span>
+                <span class="input-label">Quantity (मात्रा)</span>
+                <span class="unit-badge">Quintals</span>
             </div>
-            <div class="range-wrapper">
-                <div class="slider-progress" id="sliderProgress"></div>
+            
+            <div class="range-container">
+                <div class="slider-fill" id="sliderFill"></div>
                 <input type="range" id="quantitySlider" min="1" max="100" value="50" step="1">
             </div>
             <input type="number" id="manualQty" class="manual-input" value="50">
         </div>
 
-        <div class="input-section">
+        <div class="section-card">
             <div class="label-row">
-                <span>Expected Price (कीमत)</span>
-                <span class="unit">Per Quintal</span>
+                <span class="input-label">Expected Price (कीमत)</span>
+                <span class="unit-badge">Per Quintal</span>
             </div>
-            <div class="price-input-wrapper">
-                <span class="currency-symbol">₹</span>
+            
+            <div class="price-wrapper">
+                <span class="currency-icon">₹</span>
                 <input type="number" id="priceInput" class="price-input" value="5450">
             </div>
-            <div class="market-ref">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-                Market Rate: ₹<span id="marketRateDisplay">5450</span>
+            
+            <div class="market-tag">
+                <i class="fas fa-chart-line" style="color: var(--primary-green)"></i>
+                <span>Current Market Rate: <strong>₹<span id="marketRateDisplay">5450</span></strong></span>
             </div>
         </div>
 
-        <div class="earnings-card">
-            <div class="earnings-label">Est. Total Earnings (कुल कमाई)</div>
-            <span class="total-amount" id="totalMath">₹2,72,500</span>
-            <div class="math-breakdown">
-                <span id="qtyMath">50</span> Qtl × ₹<span id="priceMath">5,450</span>
+        <div class="section-card" style="padding-bottom: 10px;">
+            <div class="label-row">
+                <span class="input-label">Harvest Date (कटाई)</span>
             </div>
+            <input type="date" id="harvest_date" class="date-input">
         </div>
 
-        <div class="form-group">
-            <label>Harvest Date (कटाई की तारीख)</label>
-            <input type="date" id="harvestDate" class="date-input">
-        </div>
-
-        <div class="form-group">
-            <label>Photos (तस्वीरें)</label>
+        <div class="section-card">
+            <div class="label-row">
+                <span class="input-label">Crop Photos (तस्वीरें)</span>
+            </div>
             <div class="photo-grid">
-                <div class="photo-box" onclick="document.getElementById('file1').click()">
+                <div class="photo-upload-box" onclick="document.getElementById('file1').click()">
                     <input type="file" id="file1" hidden accept="image/*" onchange="previewImage(this, 'img1')">
-                    <span style="font-size:20px; color:#ccc;">📷</span>
-                    <img id="img1">
+                    <i class="fas fa-camera"></i>
+                    <span>Add</span>
+                    <img id="img1" class="uploaded-img">
                 </div>
-                <div class="photo-box" onclick="document.getElementById('file2').click()">
+                <div class="photo-upload-box" onclick="document.getElementById('file2').click()">
                     <input type="file" id="file2" hidden accept="image/*" onchange="previewImage(this, 'img2')">
-                    <span style="font-size:20px; color:#ccc;">📷</span>
-                    <img id="img2">
+                    <i class="fas fa-camera"></i>
+                    <span>Add</span>
+                    <img id="img2" class="uploaded-img">
                 </div>
-                <div class="photo-box" onclick="document.getElementById('file3').click()">
+                <div class="photo-upload-box" onclick="document.getElementById('file3').click()">
                     <input type="file" id="file3" hidden accept="image/*" onchange="previewImage(this, 'img3')">
-                    <span style="font-size:20px; color:#ccc;">📷</span>
-                    <img id="img3">
+                    <i class="fas fa-camera"></i>
+                    <span>Add</span>
+                    <img id="img3" class="uploaded-img">
                 </div>
             </div>
         </div>
     </div>
+    
+    <div class="footer-actions">
         <button id="submitBtn" class="btn-submit" onclick="submitSellRequest()">
             <span>Confirm Request</span>
+            <i class="fas fa-arrow-right"></i>
         </button>
-        <br><br><br>
+    </div>
 </div>
 {% endblock %}
 
@@ -387,13 +513,13 @@
     const slider = document.getElementById('quantitySlider');
     const manualQty = document.getElementById('manualQty');
     const priceInput = document.getElementById('priceInput');
-    const progressBar = document.getElementById('sliderProgress');
+    const sliderFill = document.getElementById('sliderFill');
 
     // Initial Values
     document.getElementById('cropNameDisplay').textContent = cropName;
     document.getElementById('marketRateDisplay').textContent = marketRate;
-    priceInput.value = marketRate; // Pre-fill with market rate, but editable
-    document.getElementById('harvestDate').min = new Date().toISOString().split('T')[0];
+    priceInput.value = marketRate; 
+    document.getElementById('harvest_date').min = new Date().toISOString().split('T')[0];
 
     // --- 2. CALCULATOR LOGIC ---
     function updateCalculations() {
@@ -401,21 +527,21 @@
         const price = parseFloat(priceInput.value) || 0;
         const total = qty * price;
 
-        // Update Result Text
+        // Update Result Text (Indian formatting)
         document.getElementById('totalMath').textContent = '₹' + total.toLocaleString('en-IN');
         
         // Update Breakdown Text
         document.getElementById('qtyMath').textContent = qty;
         document.getElementById('priceMath').textContent = price.toLocaleString('en-IN');
 
-        // Update Slider Visuals
+        // Update Slider Visual Fill
         const percentage = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-        progressBar.style.width = percentage + '%';
+        sliderFill.style.width = percentage + '%';
     }
 
     // --- 3. EVENT LISTENERS ---
     
-    // Slider Drag (Updates Quantity)
+    // Slider Drag
     slider.addEventListener('input', (e) => {
         manualQty.value = e.target.value;
         updateCalculations();
@@ -423,13 +549,14 @@
 
     // Manual Quantity Input
     manualQty.addEventListener('input', (e) => {
-        let val = e.target.value;
-        if(val > 100) val = 100; // Cap max
+        let val = parseFloat(e.target.value);
+        if(val > 100) val = 100; 
+        if(val < 0) val = 0;
         slider.value = val;
         updateCalculations();
     });
 
-    // Price Input Change (THE NEW FEATURE)
+    // Price Input Change
     priceInput.addEventListener('input', () => {
         updateCalculations();
     });
@@ -446,41 +573,71 @@
                 img.src = e.target.result;
                 img.style.display = 'block';
                 input.parentElement.classList.add('has-image');
+                
+                // Hide icon text for cleaner look
+                const icon = input.parentElement.querySelector('i');
+                const text = input.parentElement.querySelector('span');
+                if(icon) icon.style.display = 'none';
+                if(text) text.style.display = 'none';
             }
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    // --- 5. SUBMIT ---
-    function submitSellRequest() {
+    // --- 5. SUBMIT FUNCTION (Kept mostly same, added animation logic) ---
+    async function submitSellRequest() {
         const qty = manualQty.value;
         const price = priceInput.value;
-        const date = document.getElementById('harvestDate').value;
+        const date = document.getElementById('harvest_date').value;
 
-        if(!date) {
-            alert("Please select a date.");
-            return;
-        }
+        if(!date) { alert("Please select a harvest date."); return; }
+        if(!qty || qty <= 0) { alert("Please enter a valid quantity."); return; }
+        if(!price || price <= 0) { alert("Please enter a valid price."); return; }
 
         const btn = document.getElementById('submitBtn');
-        btn.innerHTML = "Processing...";
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         btn.disabled = true;
 
-        const payload = {
-            crop: cropName,
-            quantity: qty,
-            price_per_quintal: price, // Now sends USER SET price
-            total_value: qty * price,
-            harvest_date: date
-        };
+        const formData = new FormData();
+        formData.append('crop', cropName);
+        formData.append('quantity', qty);
+        formData.append('expected_price', price);
+        formData.append('harvest_date', date);
 
-        console.log("Submitting Sell Request:", payload);
+        const photo1 = document.getElementById('file1').files[0];
+        const photo2 = document.getElementById('file2').files[0];
+        const photo3 = document.getElementById('file3').files[0];
 
-        setTimeout(() => {
-            alert("Request Submitted! \nYour Price: ₹" + price + "/Qtl");
-            window.location.href = '/market/all-deals';
-        }, 1500);
+        if (photo1) formData.append('photo1', photo1);
+        if (photo2) formData.append('photo2', photo2);
+        if (photo3) formData.append('photo3', photo3);
+
+        try {
+            const response = await fetch('/market/sell/create', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                btn.innerHTML = '<i class="fas fa-check"></i> Success!';
+                btn.style.background = '#2d6a4f'; // Change to green on success
+                setTimeout(() => {
+                    alert("Request Submitted! \nYour Price: ₹" + price + "/Qtl");
+                    window.location.href = '/market/all-deals';
+                }, 500);
+            } else {
+                const error = await response.json();
+                alert('Error: ' + (error.error || 'Failed to submit'));
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error submitting request: ' + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 </script>
-
 {% endblock %}

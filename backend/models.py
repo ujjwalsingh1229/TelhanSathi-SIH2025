@@ -18,9 +18,6 @@ class Farmer(db.Model):
     # Name
     name = db.Column(db.String(255), nullable=False)
     
-    # Aadhaar Number (12-digit, linked to identity verification)
-    aadhaar_number = db.Column(db.String(12), unique=True)
-    
     # Date of Birth
     date_of_birth = db.Column(db.Date)
     
@@ -29,18 +26,12 @@ class Farmer(db.Model):
     
     # Contact Information
     phone_number = db.Column(db.String(10), nullable=False, unique=True, index=True)
-    email = db.Column(db.String(255))
     
     # Caste Category (General/OBC/SC/ST)
     caste_category = db.Column(db.String(50))
-    caste_certificate_path = db.Column(db.String(255))  # Path to uploaded certificate
     
     # Physically Handicapped Status (Yes/No)
     is_physically_handicapped = db.Column(db.Boolean, default=False)
-    disability_certificate_path = db.Column(db.String(255))
-    
-    # Domicile Status (Maharashtra resident verification)
-    is_maharashtra_resident = db.Column(db.Boolean, default=True)
     
     # ===== ADDRESS INFORMATION =====
     # Permanent Address
@@ -55,20 +46,8 @@ class Farmer(db.Model):
     pincode = db.Column(db.String(6))
     
     # GPS Coordinates (for location-based services)
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
     
     # ===== LAND OWNERSHIP & AGRICULTURAL DETAILS =====
-    # Land Records Information
-    # 7/12 Extract (Record of Rights) - Path to document
-    record_of_rights_7_12_path = db.Column(db.String(255))
-    
-    # 8A Document (Lease deed) - Path to document
-    lease_deed_8a_path = db.Column(db.String(255))
-    
-    # Land Survey Numbers (comma-separated if multiple)
-    land_survey_numbers = db.Column(db.String(500))
-    
     # Total Land Area in hectares
     total_land_area_hectares = db.Column(db.Float, nullable=False, default=0.0)
     
@@ -77,9 +56,6 @@ class Farmer(db.Model):
     
     # Land Holder Type (Owner/Co-owner/Tenant/Sharecropper)
     land_holder_type = db.Column(db.String(50), default='Owner')
-    
-    # Indicates if farmer owns land in multiple villages
-    owns_land_in_multiple_villages = db.Column(db.Boolean, default=False)
     
     # Soil Type (Loamy, Clay, Sandy, Black Soil, Red Soil, etc.)
     soil_type = db.Column(db.String(100))
@@ -92,15 +68,7 @@ class Farmer(db.Model):
     oilseed_enrollment_date = db.Column(db.DateTime)
     
     # ===== FINANCIAL INFORMATION =====
-    # Bank Account Details
-    bank_name = db.Column(db.String(100))
-    bank_branch = db.Column(db.String(100))
-    account_number = db.Column(db.String(20))
-    account_holder_name = db.Column(db.String(255))
-    ifsc_code = db.Column(db.String(11))  # IFSC code format: 4 letters + 0 + 6 digits
-    
-    # Income Certificate Details (if applicable)
-    income_certificate_path = db.Column(db.String(255))
+    # Income Information
     annual_income = db.Column(db.Float)
     
     # PM-KISAN Beneficiary Status
@@ -110,19 +78,12 @@ class Farmer(db.Model):
     # ===== ACCOUNT STATUS & VERIFICATION =====
     is_verified = db.Column(db.Boolean, default=False)
     verification_timestamp = db.Column(db.DateTime)
+
+    # Has the farmer completed the onboarding flow?
+    onboarding_completed = db.Column(db.Boolean, default=False)
     
-    # Document verification status
-    documents_verified = db.Column(db.Boolean, default=False)
-
-    # Has the farmer completed the onboarding flow (UI-driven quick profile)?
-    # Soil Type (Loamy, Clay, Sandy, Black Soil, Red Soil, etc.)
-    soil_type = db.Column(db.String(100))
-
     # Water Type (Freshwater, Salt Water, Brackish Water)
     water_type = db.Column(db.String(50))
-
-    # Irrigation Type (Tube Well, Well, Rainfed, Canal)
-    # irrigation_type = db.Column(db.String(50))
 
     # Harvest Date (YYYY-MM)
     harvest_date = db.Column(db.Date)
@@ -132,7 +93,6 @@ class Farmer(db.Model):
 
     # Current Crop(s) cultivated (stored as comma-separated or JSON)
     current_crops = db.Column(db.String(500))
-    onboarding_completed = db.Column(db.Boolean, default=False)
     
     # ===== GAMIFICATION =====
     coins_earned = db.Column(db.Integer, default=0)  # Total coins earned
@@ -157,11 +117,9 @@ class Farmer(db.Model):
             'id': self.id,
             'farmer_id': self.farmer_id,
             'name': self.name,
-            'aadhaar_number': self.aadhaar_number,
             'date_of_birth': self.date_of_birth.isoformat() if self.date_of_birth else None,
             'gender': self.gender,
             'phone': self.phone_number,
-            'email': self.email,
             'district': self.district,
             'taluka': self.taluka,
             'village': self.village,
@@ -173,12 +131,7 @@ class Farmer(db.Model):
             'soil_type': self.soil_type,
             'current_crops': self.current_crops,
             'water_type': self.water_type,
-            'bank_name': self.bank_name,
-            'bank_account_number': self.account_number,
-            'ifsc_code': self.ifsc_code,
-            'aadhar_number': self.aadhaar_number,
             'is_verified': self.is_verified,
-            'documents_verified': self.documents_verified,
             'photo_url': None,
             'land_unit': self.land_unit,
             'harvest_date': self.harvest_date.isoformat() if self.harvest_date else None,
@@ -590,5 +543,55 @@ class FarmerRedemption(db.Model):
             'expires_at': self.expires_at.isoformat() if self.expires_at else None,
             'used_at': self.used_at.isoformat() if self.used_at else None,
             'redemption_code': self.redemption_code
+        }
+
+
+class FarmerRecommendation(db.Model):
+    """
+    Stores AI-generated scheme recommendations for farmers.
+    Prevents repeated API calls by caching recommendations in database.
+    """
+    __tablename__ = 'farmer_recommendations'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), nullable=False, index=True)
+    scheme_id = db.Column(db.String(36), db.ForeignKey('schemes.id'), nullable=False)
+    
+    # Recommendation details
+    priority = db.Column(db.String(20), default='medium')  # high, medium, low
+    match_percentage = db.Column(db.Integer, default=0)  # 0-100
+    reason = db.Column(db.Text)  # Why this scheme is recommended
+    
+    # AI method used
+    ai_method = db.Column(db.String(50), default='gemini')  # gemini, rule_based, hybrid
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    expires_at = db.Column(db.DateTime)  # Recommendation expires after 24 hours
+    
+    # Relationships
+    farmer = db.relationship('Farmer', backref='recommendations', lazy=True)
+    scheme = db.relationship('Scheme', backref='recommended_for', lazy=True)
+    
+    def __repr__(self):
+        return f'<FarmerRecommendation {self.farmer_id}-{self.scheme_id} {self.priority}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'farmer_id': self.farmer_id,
+            'scheme_id': self.scheme_id,
+            'scheme_name': self.scheme.name if self.scheme else 'Unknown',
+            'description': self.scheme.description if self.scheme else '',
+            'benefit_amount': self.scheme.benefit_amount if self.scheme else '',
+            'eligibility_criteria': self.scheme.eligibility_criteria if self.scheme else '',
+            'focus_area': self.scheme.focus_area if self.scheme else '',
+            'focus_color': self.scheme.focus_color if self.scheme else '#2196f3',
+            'external_link': self.scheme.external_link if self.scheme else '',
+            'priority': self.priority,
+            'match_percentage': self.match_percentage,
+            'reason': self.reason,
+            'ai_method': self.ai_method,
+            'created_at': self.created_at.isoformat()
         }
 

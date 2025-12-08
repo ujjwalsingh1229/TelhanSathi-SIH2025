@@ -302,12 +302,9 @@ def _get_gemini_recommendations(farmer):
             'soil_type': farmer.soil_type,
             'current_crops': farmer.current_crops,
             'caste_category': farmer.caste_category,
-            'is_physically_handicapped': farmer.is_physically_handicapped,
             'is_oilseed_farmer': farmer.is_oilseed_farmer,
             'is_pm_kisan_beneficiary': farmer.is_pm_kisan_beneficiary,
-            'annual_income': farmer.annual_income,
-            'land_holder_type': farmer.land_holder_type,
-            'owns_multiple_villages': farmer.owns_land_in_multiple_villages
+            'land_holder_type': farmer.land_holder_type
         }
         
         # Initialize Gemini API

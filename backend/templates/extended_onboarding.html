@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extended Onboarding - Farmer Information</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --dark-green: #059669;
+            --light-bg: #f0fdf4;
+            --text-dark: #1f2937;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--light-bg) 0%, #e0f7ea 100%);
+            color: var(--text-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .onboarding-container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .onboarding-header {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .onboarding-header h1 {
+            font-size: 28px;
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+
+        .onboarding-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .onboarding-form {
+            padding: 30px 25px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-green);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .primary-button {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <div class="onboarding-header">
+            <h1>👤 Your Information</h1>
+            <p>Please share additional details</p>
+        </div>
+
+        <form method="POST" class="onboarding-form" id="extended-form">
+
+            <!-- INFO BOX -->
+            <div class="info-box">
+                <strong>ℹ️ Note:</strong> Your personal information is safe. You can update this later.
+            </div>
+
+            <!-- PERSONAL INFORMATION -->
+            <div class="form-section">
+                <div class="form-section-title">Personal Information</div>
+
+                <div class="form-group">
+                    <label for="name">
+                        Name
+                        <span class="required-badge">Required</span>
+                    </label>
+                    <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date_of_birth">
+                            Date of Birth
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <input type="date" id="date_of_birth" name="date_of_birth" value="{{ pre.date_of_birth }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">
+                            Gender
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <select id="gender" name="gender">
+                            <option value="">-- Select --</option>
+                            <option value="male" {% if pre.gender == 'male' %}selected{% endif %}>Male</option>
+                            <option value="female" {% if pre.gender == 'female' %}selected{% endif %}>Female</option>
+                            <option value="other" {% if pre.gender == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="caste_category">
+                        Caste Category
+                        <span class="optional-badge">Optional</span>
+                    </label>
+                    <select id="caste_category" name="caste_category">
+                        <option value="">-- Select --</option>
+                        <option value="General" {% if pre.caste_category == 'General' %}selected{% endif %}>General</option>
+                        <option value="OBC" {% if pre.caste_category == 'OBC' %}selected{% endif %}>OBC</option>
+                        <option value="SC" {% if pre.caste_category == 'SC' %}selected{% endif %}>SC</option>
+                        <option value="ST" {% if pre.caste_category == 'ST' %}selected{% endif %}>ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ADDRESS -->
+            <div class="form-section">
+                <div class="form-section-title">Address Details</div>
+
+                <div class="form-group">
+                    <label for="permanent_address">
+                        Permanent Address
+                        <span class="optional-badge">Optional</span>
+                    </label>
+                    <textarea id="permanent_address" name="permanent_address" placeholder="Enter full address">{{ pre.permanent_address }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="district">
+                        District
+                        <span class="required-badge">Required</span>
+                    </label>
+                    <input type="text" id="district" name="district" placeholder="District name" value="{{ pre.district }}" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="village">
+                            Village
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <input type="text" id="village" name="village" placeholder="Village name" value="{{ pre.village }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taluka">
+                            Taluka
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <input type="text" id="taluka" name="taluka" placeholder="Taluka name" value="{{ pre.taluka }}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="state">
+                            State
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <input type="text" id="state" name="state" placeholder="State name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pincode">
+                            Pincode
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <input type="text" id="pincode" name="pincode" placeholder="6-digit code" value="{{ pre.pincode }}" pattern="\d{6}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- LAND INFORMATION -->
+            <div class="form-section">
+                <div class="form-section-title">Land Information</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="land_holder_type">
+                            Land Holder Type
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <select id="land_holder_type" name="land_holder_type">
+                            <option value="">-- Select --</option>
+                            <option value="Owner" {% if pre.land_holder_type == 'Owner' %}selected{% endif %}>Owner</option>
+                            <option value="Tenant" {% if pre.land_holder_type == 'Tenant' %}selected{% endif %}>Tenant</option>
+                            <option value="Sharecropper" {% if pre.land_holder_type == 'Sharecropper' %}selected{% endif %}>Sharecropper</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="button-group">
+                <button type="submit" class="primary-button">
+                    ✅ Next (Continue)
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('extended-form').addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+
+            if (!name) {
+                e.preventDefault();
+                alert('Please enter your name');
+                return false;
+            }
+
+            const pincode = document.getElementById('pincode').value.trim();
+            if (pincode && !/^\d{6}$/.test(pincode)) {
+                e.preventDefault();
+                alert('Please enter a valid 6-digit pincode');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

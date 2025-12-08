@@ -70,12 +70,8 @@ def api_forecast():
     farmer_id = session['farmer_id_verified']
     farmer = Farmer.query.filter_by(id=farmer_id).first()
     district = None
-    lat = None
-    lon = None
     if farmer:
         district = getattr(farmer, 'district', None)
-        lat = getattr(farmer, 'latitude', None)
-        lon = getattr(farmer, 'longitude', None)
 
-    forecast = generate_forecast_for_location(district=district, lat=lat, lon=lon, days=7)
+    forecast = generate_forecast_for_location(district=district, lat=None, lon=None, days=7)
     return jsonify({'location': district or 'your area', 'forecast': forecast})

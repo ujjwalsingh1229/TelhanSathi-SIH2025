@@ -318,6 +318,7 @@ def deals_list():
     combined = []
 
     for deal in sell_requests:
+        print(deal.harvest_date)
         combined.append({
             "id": deal.id,
             "type": "sell_request",
@@ -381,6 +382,36 @@ def deal_data(request_id):
     # frontend can hide/show negotiation and action UI.
     photos = SellPhoto.query.filter_by(request_id=request_id).all()
     
+    # Ensure harvest_date is serialized as ISO string (or left as string) and
+    # attempt to provide a human-friendly location. Some older records may
+    # have empty `location` field, so fall back to farmer's village/district.
+    # Also handle the case where harvest_date is already a string (stored as
+    # string in this model) or a date/datetime object.
+    raw_harvest = deal.harvest_date
+    if hasattr(raw_harvest, 'isoformat'):
+        harvest_serialized = raw_harvest.isoformat()
+    else:
+        harvest_serialized = raw_harvest if raw_harvest else None
+
+    # Fallback for location: prefer deal.location, otherwise try to lookup
+    # farmer record and use village/district if available.
+    location_val = deal.location
+    if not location_val:
+        try:
+            from models import Farmer
+            farmer_obj = Farmer.query.filter_by(id=deal.farmer_id).first()
+            if farmer_obj:
+                parts = []
+                if getattr(farmer_obj, 'village', None):
+                    parts.append(farmer_obj.village)
+                if getattr(farmer_obj, 'district', None):
+                    parts.append(farmer_obj.district)
+                if parts:
+                    location_val = ', '.join(parts)
+        except Exception:
+            # If anything fails, leave location_val as-is (None or empty)
+            pass
+
     deal_data = {
         "id": deal.id,
         "crop_name": deal.crop_name,
@@ -388,8 +419,8 @@ def deal_data(request_id):
         "expected_price": deal.expected_price,
         "buyer_price": deal.buyer_price,
         "final_price": deal.final_price,
-        "harvest_date": deal.harvest_date,
-        "location": deal.location,
+        "harvest_date": harvest_serialized,
+        "location": location_val,
         "farmer_name": deal.farmer_name,
         "farmer_id": deal.farmer_id,
         "farmer_phone": deal.farmer_phone,

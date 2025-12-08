@@ -402,7 +402,7 @@
             // Update listing details
             document.getElementById('detail-crop').textContent = deal.crop_name;
             document.getElementById('detail-quantity').textContent = `${deal.quantity_quintal} Quintals`;
-            document.getElementById('detail-harvest').textContent = formatDate(deal.harvest_date);
+            document.getElementById('detail-harvest').textContent = `${formatDate(deal.harvest_date)}`;
             document.getElementById('detail-location').textContent = deal.location;
             document.getElementById('detail-phone').textContent = deal.farmer_phone;
 
@@ -541,12 +541,17 @@
         }
 
         function formatDate(dateStr) {
-            try {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-            } catch {
-                return dateStr;
+            // Handle null/empty
+            if (!dateStr) return '-';
+
+            // If it's already a number or date string, try to parse
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                // Invalid date string — return the raw string or a placeholder
+                return dateStr || '-';
             }
+
+            return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
         }
 
         function goBack() {
