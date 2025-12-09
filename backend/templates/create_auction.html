@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Create Auction - Mandi Connect{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bidding.css') }}">
+<style>
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) {
+        .form-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-auction-container">
+    <!-- Header -->
+    <div class="form-header">
+        <h1>📋 Create New Auction</h1>
+        <p class="subtitle">List your crops and find buyers directly</p>
+    </div>
+
+    <!-- Main Form -->
+    <div class="form-wrapper">
+        <form id="createAuctionForm" enctype="multipart/form-data">
+            <!-- Section 1: Crop Information -->
+            <div class="form-section">
+                <h2 class="section-title">🌾 Crop Information</h2>
+                
+                <div class="form-group">
+                    <label for="cropName" class="form-label">Crop Type <span class="required">*</span></label>
+                    <select id="cropName" name="crop_name" required>
+                        <option value="">Select a crop</option>
+                        <option value="Soybean">Soybean</option>
+                        <option value="Sunflower">Sunflower</option>
+                        <option value="Safflower">Safflower</option>
+                        <option value="Groundnut">Groundnut</option>
+                        <option value="Castor">Castor</option>
+                        <option value="Mustard">Mustard</option>
+                        <option value="Coconut">Coconut</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quantity" class="form-label">Quantity (Quintals) <span class="required">*</span></label>
+                        <input type="number" id="quantity" name="quantity" min="1" max="1000" required 
+                               placeholder="e.g., 50" onchange="updateBasePriceDisplay()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="basePrice" class="form-label">Base Price (₹) <span class="required">*</span></label>
+                        <input type="number" id="basePrice" name="base_price" readonly 
+                               placeholder="Will be fetched from Mandi API">
+                        <small class="help-text">Automatically fetched from Government Mandi Price API</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Bidding Details -->
+            <div class="form-section">
+                <h2 class="section-title">💰 Bidding Details</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="minBid" class="form-label">Minimum Bid Price (₹) <span class="required">*</span></label>
+                        <input type="number" id="minBid" name="min_bid_price" min="100" required 
+                               placeholder="e.g., 5500" onchange="validateMinBid()">
+                        <small class="help-text">Must be equal to or greater than base price</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duration" class="form-label">Auction Duration (Hours) <span class="required">*</span></label>
+                        <select id="duration" name="duration_hours" required>
+                            <option value="">Select duration</option>
+                            <option value="6">6 Hours</option>
+                            <option value="12">12 Hours</option>
+                            <option value="24">24 Hours</option>
+                            <option value="48">48 Hours (2 Days)</option>
+                            <option value="72">72 Hours (3 Days)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Auto-bid Info -->
+                <div class="info-box">
+                    <span class="info-icon">ℹ️</span>
+                    <div class="info-content">
+                        <p><strong>Auto-Bidding:</strong> Buyers can set automatic bidding up to a maximum price. The system will automatically place bids on their behalf.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Location & Description -->
+            <div class="form-section">
+                <h2 class="section-title">📍 Location & Description</h2>
+                
+                <div class="form-group">
+                    <label for="location" class="form-label">Location <span class="required">*</span></label>
+                    <input type="text" id="location" name="location" required 
+                           placeholder="e.g., Indore, Madhya Pradesh">
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description (Optional)</label>
+                    <textarea id="description" name="description" rows="4" 
+                              placeholder="Provide details about your crop (quality, variety, harvest date, etc.)"></textarea>
+                    <small class="help-text">Max 500 characters</small>
+                </div>
+            </div>
+
+            <!-- Section 4: Photos -->
+            <div class="form-section">
+                <h2 class="section-title">📸 Photos</h2>
+                
+                <div class="photos-grid">
+                    <div class="photo-upload-group">
+                        <label for="photo1" class="photo-label">Main Photo <span class="required">*</span></label>
+                        <div class="photo-input-wrapper" id="photo1Wrapper">
+                            <input type="file" id="photo1" name="photo1" accept="image/*" required onchange="previewPhoto(this, 1)">
+                            <div class="photo-placeholder" id="photo1Preview">
+                                <span class="upload-icon">📷</span>
+                                <span>Click to upload</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="photo-upload-group">
+                        <label for="photo2" class="photo-label">Photo 2 (Optional)</label>
+                        <div class="photo-input-wrapper" id="photo2Wrapper">
+                            <input type="file" id="photo2" name="photo2" accept="image/*" onchange="previewPhoto(this, 2)">
+                            <div class="photo-placeholder" id="photo2Preview">
+                                <span class="upload-icon">📷</span>
+                                <span>Click to upload</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="photo-upload-group">
+                        <label for="photo3" class="photo-label">Photo 3 (Optional)</label>
+                        <div class="photo-input-wrapper" id="photo3Wrapper">
+                            <input type="file" id="photo3" name="photo3" accept="image/*" onchange="previewPhoto(this, 3)">
+                            <div class="photo-placeholder" id="photo3Preview">
+                                <span class="upload-icon">📷</span>
+                                <span>Click to upload</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <small class="help-text">Supported formats: JPG, PNG (Max 5MB each)</small>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="resetForm()">Clear Form</button>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <span>Create Auction</span>
+                </button>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div id="formMessage" class="form-message" style="display: none;"></div>
+        </form>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="tips-section">
+        <h3>💡 Tips for Successful Auction</h3>
+        <ul>
+            <li><strong>Clear Photos:</strong> High-quality photos increase buyer confidence and typically result in better prices</li>
+            <li><strong>Accurate Description:</strong> Mention variety, harvest date, and any special qualities of your crop</li>
+            <li><strong>Realistic Pricing:</strong> Check market prices for your crop type to set competitive minimum bids</li>
+            <li><strong>Timing:</strong> Shorter durations create urgency, longer durations attract more bidders</li>
+            <li><strong>Quantity:</strong> Larger quantities may attract wholesale buyers for better deals</li>
+        </ul>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form submission
+    document.getElementById('createAuctionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitAuction();
+    });
+
+    // Fetch base price when crop changes
+    document.getElementById('cropName').addEventListener('change', function() {
+        updateBasePriceDisplay();
+    });
+
+    // Fetch and display base price
+    function updateBasePriceDisplay() {
+        const crop = document.getElementById('cropName').value;
+        if (!crop) return;
+
+        fetch(`/bidding/get-base-price/${crop}`)
+            .then(res => res.json())
+            .then(data => {
+                const basePrice = data.price || 5000;
+                document.getElementById('basePrice').value = basePrice;
+                document.getElementById('minBid').placeholder = `Minimum: ₹${formatNumber(basePrice)}`;
+            })
+            .catch(err => {
+                console.error('Error fetching base price:', err);
+                document.getElementById('basePrice').value = '5000'; // Default fallback
+            });
+    }
+
+    // Validate minimum bid
+    function validateMinBid() {
+        const basePrice = parseInt(document.getElementById('basePrice').value) || 0;
+        const minBid = parseInt(document.getElementById('minBid').value) || 0;
+
+        if (minBid < basePrice) {
+            showMessage('Minimum bid must be at least ₹' + formatNumber(basePrice), 'error');
+            document.getElementById('minBid').value = basePrice;
+            return false;
+        }
+        return true;
+    }
+
+    // Preview photo
+    function previewPhoto(input, photoNum) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Validate file size
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('Photo must be less than 5MB', 'error');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById(`photo${photoNum}Preview`);
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Submit auction
+    function submitAuction() {
+        // Validate form
+        if (!validateMinBid()) return;
+
+        const form = document.getElementById('createAuctionForm');
+        const formData = new FormData(form);
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>Creating...</span>';
+        
+        // Debug logging
+        console.log('Creating auction with data:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
+
+        fetch('/bidding/farmer/create-auction', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'  // Important: Include cookies for session
+        })
+        .then(res => {
+            console.log(`Response status: ${res.status}`);
+            // Handle non-2xx responses
+            if (!res.ok) {
+                return res.json().then(data => {
+                    console.error('Error response:', data);
+                    throw new Error(data.error || `HTTP ${res.status}: ${res.statusText}`);
+                });
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log('Success response:', data);
+            if (data.success) {
+                showMessage('✅ Auction created successfully! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = `/bidding/auction-detail/${data.auction_id}`;
+                }, 2000);
+            } else {
+                showMessage('❌ ' + (data.message || data.error || 'Failed to create auction'), 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Create Auction</span>';
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            const errorMessage = err.message || 'Error creating auction. Please try again.';
+            console.error('Error message:', errorMessage);
+            
+            // Show specific error messages
+            if (errorMessage.includes('Farmer not authenticated')) {
+                showMessage('❌ Please log in as a farmer to create an auction', 'error');
+            } else if (errorMessage.includes('401')) {
+                showMessage('❌ Your session has expired. Please log in again.', 'error');
+            } else {
+                showMessage('❌ ' + errorMessage, 'error');
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Create Auction</span>';
+        });
+    }
+
+    // Reset form
+    function resetForm() {
+        document.getElementById('createAuctionForm').reset();
+        document.querySelectorAll('[id^="photo"][id$="Preview"]').forEach(el => {
+            el.innerHTML = '<span class="upload-icon">📷</span><span>Click to upload</span>';
+        });
+    }
+
+    // Show message
+    function showMessage(message, type) {
+        const msgEl = document.getElementById('formMessage');
+        msgEl.textContent = message;
+        msgEl.className = `form-message form-message-${type}`;
+        msgEl.style.display = 'block';
+
+        if (type === 'success') {
+            setTimeout(() => {
+                msgEl.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Helper
+    function formatNumber(num) {
+        return new Intl.NumberFormat('en-IN').format(num);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateBasePriceDisplay();
+    });
+</script>
+{% endblock %}

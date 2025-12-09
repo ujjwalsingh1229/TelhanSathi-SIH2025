@@ -3,11 +3,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import sys
 import os
+import requests
 
 # Avoid circular imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models_marketplace import Buyer
+from models_marketplace import Buyer, SellRequest, BuyerOffer, Chat, ChatMessage, MarketPrice
 from extensions import db
 
 buyer_auth_bp = Blueprint('buyer_auth', __name__, url_prefix='/buyer')
@@ -172,14 +173,14 @@ def buyer_my_offers():
     buyer_id = session.get('buyer_id')
     
     # Import here to avoid circular imports
-    from models_marketplace import BuyerOffer, SellRequest
+    from models_marketplace import BuyerOffer
     
     # Get all buyer offers for this buyer (independent offers, not linked to sell requests)
     offers = BuyerOffer.query.filter_by(buyer_id=buyer_id).all()
     
     offers_data = []
     for offer in offers:
-        offer_dict = {
+        offers_data.append({
             'id': offer.id,
             'crop_name': offer.crop_name,
             'quantity_quintal': offer.quantity_quintal,
@@ -193,28 +194,8 @@ def buyer_my_offers():
             'buyer_location': offer.buyer_location,
             'buyer_company': offer.buyer_company,
             'created_at': offer.created_at.isoformat() if offer.created_at else None,
-            'updated_at': offer.updated_at.isoformat() if offer.updated_at else None,
-            'sell_request': None
-        }
-        
-        # If offer has been accepted, include the linked sell request
-        if offer.sell_request_id:
-            sell_req = SellRequest.query.get(offer.sell_request_id)
-            if sell_req:
-                offer_dict['sell_request'] = {
-                    'id': sell_req.id,
-                    'crop_name': sell_req.crop_name,
-                    'quantity_quintal': sell_req.quantity_quintal,
-                    'expected_price': sell_req.expected_price,
-                    'farmer_name': sell_req.farmer_name,
-                    'farmer_phone': sell_req.farmer_phone,
-                    'location': sell_req.location,
-                    'harvest_date': sell_req.harvest_date,
-                    'status': sell_req.status,
-                    'created_at': sell_req.created_at.isoformat() if sell_req.created_at else None
-                }
-        
-        offers_data.append(offer_dict)
+            'updated_at': offer.updated_at.isoformat() if offer.updated_at else None
+        })
     
     return jsonify(offers_data)
 
@@ -350,3 +331,458 @@ def marketplace_offers():
         })
     
     return jsonify(offers_data)
+
+
+@buyer_auth_bp.route('/api/offers/<offer_id>', methods=['DELETE'])
+def delete_offer(offer_id):
+    """Delete a buyer offer"""
+    if 'buyer_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    from models_marketplace import BuyerOffer
+    
+    buyer_id = session.get('buyer_id')
+    offer = BuyerOffer.query.filter_by(id=offer_id, buyer_id=buyer_id).first()
+    
+    if not offer:
+        return jsonify({'error': 'Offer not found or unauthorized'}), 404
+    
+    try:
+        db.session.delete(offer)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Offer deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@buyer_auth_bp.route('/api/offers/<offer_id>', methods=['PUT'])
+def update_offer(offer_id):
+    """Update a buyer offer"""
+    if 'buyer_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    from models_marketplace import BuyerOffer
+    
+    try:
+        buyer_id = session.get('buyer_id')
+        offer = BuyerOffer.query.filter_by(id=offer_id, buyer_id=buyer_id).first()
+        
+        if not offer:
+            return jsonify({'error': 'Offer not found or unauthorized'}), 404
+        
+        data = request.get_json()
+        
+        # Update fields
+        if 'crop_name' in data:
+            offer.crop_name = data['crop_name']
+        if 'quantity_quintal' in data:
+            offer.quantity_quintal = float(data['quantity_quintal'])
+        if 'initial_price' in data:
+            offer.initial_price = float(data['initial_price'])
+        if 'location_wanted' in data:
+            offer.location_wanted = data['location_wanted']
+        if 'district_wanted' in data:
+            offer.district_wanted = data['district_wanted']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Offer updated successfully',
+            'offer': {
+                'id': offer.id,
+                'crop_name': offer.crop_name,
+                'quantity_quintal': offer.quantity_quintal,
+                'initial_price': offer.initial_price,
+                'status': offer.status
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@buyer_auth_bp.route('/api/sell-requests', methods=['GET'])
+def get_sell_requests():
+    """Get sell requests that match buyer's offer crops"""
+    try:
+        # Check if buyer is logged in
+        buyer_id = session.get('buyer_id')
+        if not buyer_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get all crops the buyer has offers for
+        buyer_offers = BuyerOffer.query.filter_by(buyer_id=buyer_id).all()
+        
+        if not buyer_offers:
+            return jsonify([]), 200
+        
+        # Extract unique crop names from buyer's offers
+        buyer_crops = set(offer.crop_name.lower() for offer in buyer_offers)
+        
+        # Fetch all pending sell requests
+        all_sell_requests = SellRequest.query.filter_by(status='pending').order_by(SellRequest.created_at.desc()).all()
+        
+        # Filter to only show sell requests for crops the buyer is interested in
+        matching_requests = [
+            sr for sr in all_sell_requests 
+            if sr.crop_name.lower() in buyer_crops
+        ]
+        
+        # Format response
+        requests_data = []
+        for sr in matching_requests:
+            # Get photos for this sell request
+            photos = [photo.photo_url for photo in sr.photos] if sr.photos else []
+            
+            requests_data.append({
+                'id': sr.id,
+                'farmer_id': sr.farmer_id,
+                'crop_name': sr.crop_name,
+                'quantity_quintal': sr.quantity_quintal,
+                'expected_price': sr.expected_price,
+                'harvest_date': sr.harvest_date,
+                'location': sr.location,
+                'farmer_name': sr.farmer_name,
+                'farmer_phone': sr.farmer_phone,
+                'status': sr.status,
+                'photos': photos,
+                'created_at': sr.created_at.isoformat() if sr.created_at else None
+            })
+        
+        return jsonify(requests_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ===== CHAT API =====
+
+@buyer_auth_bp.route('/api/chats', methods=['GET'])
+def get_buyer_chats():
+    """Get all chats initiated by buyer"""
+    try:
+        buyer_id = session.get('buyer_id')
+        if not buyer_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get all chats for this buyer
+        chats = Chat.query.filter_by(buyer_id=buyer_id, is_active=True).order_by(Chat.last_message_at.desc()).all()
+        
+        chats_data = []
+        for chat in chats:
+            # Get last message
+            last_message = ChatMessage.query.filter_by(chat_id=chat.id).order_by(ChatMessage.created_at.desc()).first()
+            
+            chats_data.append({
+                'id': chat.id,
+                'farmer_id': chat.farmer_id,
+                'crop_name': chat.crop_name,
+                'sell_request_id': chat.sell_request_id,
+                'buyer_offer_id': chat.buyer_offer_id,
+                'is_active': chat.is_active,
+                'created_at': chat.created_at.isoformat(),
+                'last_message': {
+                    'text': last_message.message if last_message else None,
+                    'sender': last_message.sender_type if last_message else None,
+                    'time': last_message.created_at.isoformat() if last_message else None
+                },
+                'message_count': len(chat.messages)
+            })
+        
+        return jsonify(chats_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@buyer_auth_bp.route('/api/chats', methods=['POST'])
+def create_chat():
+    """Create or get existing chat with farmer"""
+    try:
+        buyer_id = session.get('buyer_id')
+        if not buyer_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.get_json()
+        farmer_id = data.get('farmer_id')
+        sell_request_id = data.get('sell_request_id')
+        crop_name = data.get('crop_name')
+        
+        if not farmer_id or not crop_name:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Check if chat already exists
+        existing_chat = Chat.query.filter_by(
+            buyer_id=buyer_id,
+            farmer_id=farmer_id,
+            crop_name=crop_name
+        ).first()
+        
+        if existing_chat:
+            return jsonify({'id': existing_chat.id}), 200
+        
+        # Create new chat
+        new_chat = Chat(
+            buyer_id=buyer_id,
+            farmer_id=farmer_id,
+            sell_request_id=sell_request_id,
+            crop_name=crop_name
+        )
+        
+        db.session.add(new_chat)
+        db.session.commit()
+        
+        return jsonify({'id': new_chat.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@buyer_auth_bp.route('/api/chats/<chat_id>/messages', methods=['GET'])
+def get_chat_messages(chat_id):
+    """Get all messages in a chat"""
+    try:
+        buyer_id = session.get('buyer_id')
+        if not buyer_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Verify chat belongs to buyer
+        chat = Chat.query.filter_by(id=chat_id, buyer_id=buyer_id).first()
+        if not chat:
+            return jsonify({'error': 'Chat not found'}), 404
+        
+        # Get all messages
+        messages = ChatMessage.query.filter_by(chat_id=chat_id).order_by(ChatMessage.created_at.asc()).all()
+        
+        messages_data = []
+        for msg in messages:
+            messages_data.append({
+                'id': msg.id,
+                'sender_type': msg.sender_type,
+                'sender_name': msg.sender_name,
+                'message': msg.message,
+                'created_at': msg.created_at.isoformat(),
+                'is_read': msg.is_read
+            })
+        
+        return jsonify(messages_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@buyer_auth_bp.route('/api/chats/<chat_id>/messages', methods=['POST'])
+def send_chat_message(chat_id):
+    """Send a message in chat"""
+    try:
+        buyer_id = session.get('buyer_id')
+        buyer_name = session.get('buyer_name')
+        if not buyer_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Verify chat belongs to buyer
+        chat = Chat.query.filter_by(id=chat_id, buyer_id=buyer_id).first()
+        if not chat:
+            return jsonify({'error': 'Chat not found'}), 404
+        
+        data = request.get_json()
+        message_text = data.get('message', '').strip()
+        
+        if not message_text:
+            return jsonify({'error': 'Message cannot be empty'}), 400
+        
+        # Create message
+        new_message = ChatMessage(
+            chat_id=chat_id,
+            sender_type='buyer',
+            sender_id=buyer_id,
+            sender_name=buyer_name,
+            message=message_text
+        )
+        
+        # Update chat's last_message_at
+        chat.last_message_at = datetime.utcnow()
+        
+        db.session.add(new_message)
+        db.session.commit()
+        
+        return jsonify({
+            'id': new_message.id,
+            'message': new_message.message,
+            'sender_type': new_message.sender_type,
+            'created_at': new_message.created_at.isoformat()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# ===== MARKET PRICE ENDPOINTS =====
+
+# Oilseed commodity mappings for Data.gov.in API
+OILSEED_COMMODITIES = {
+    'Soybean': 'Soyabean',
+    'Sunflower': 'Sunflower',
+    'Mustard': 'Mustard/Rape seed',
+    'Groundnut': 'Groundnut',
+    'Safflower': 'Safflower',
+    'Castor': 'Castor'
+}
+
+API_KEY = '579b464db66ec23bdd00000139dd36efa19740c954f95d9ca3b5abd0'
+
+
+@buyer_auth_bp.route('/api/sync-prices', methods=['POST'])
+def sync_market_prices():
+    """
+    Sync commodity prices from Data.gov.in API
+    Fetches latest prices for oilseed commodities
+    """
+    try:
+        synced_count = 0
+        errors = []
+        
+        # Call Data.gov.in API for each commodity
+        for commodity_key, commodity_api_name in OILSEED_COMMODITIES.items():
+            try:
+                # Data.gov.in API endpoint
+                api_url = "https://api.data.gov.in/resource/5e4ff2f1-d728-49b5-b92e-12640c4e3ede"
+                
+                params = {
+                    'api-key': API_KEY,
+                    'format': 'json',
+                    'filters[commodity_name]': commodity_api_name,
+                    'limit': 1000
+                }
+                
+                response = requests.get(api_url, params=params, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                if 'records' in data:
+                    for record in data['records']:
+                        try:
+                            # Extract data from API response
+                            commodity_name = record.get('commodity_name', commodity_key)
+                            market_name = record.get('market', '')
+                            market_state = record.get('state', '')
+                            market_district = record.get('district', '')
+                            
+                            # Parse prices
+                            open_price = float(record.get('arrival_date', 0)) if record.get('arrival_date') else None
+                            close_price = float(record.get('modal_price', 0)) if record.get('modal_price') else None
+                            high_price = float(record.get('max_price', 0)) if record.get('max_price') else None
+                            low_price = float(record.get('min_price', 0)) if record.get('min_price') else None
+                            
+                            # Price date
+                            price_date_str = record.get('arrival_date', '')
+                            try:
+                                price_date = datetime.strptime(price_date_str, '%d/%m/%Y').date()
+                            except:
+                                price_date = datetime.utcnow().date()
+                            
+                            # Check if record exists
+                            existing = MarketPrice.query.filter_by(
+                                commodity_name=commodity_name,
+                                market_name=market_name,
+                                price_date=price_date
+                            ).first()
+                            
+                            if existing:
+                                # Update existing record
+                                existing.open_price = open_price
+                                existing.close_price = close_price
+                                existing.high_price = high_price
+                                existing.low_price = low_price
+                                existing.updated_at = datetime.utcnow()
+                                db.session.add(existing)
+                            else:
+                                # Create new record
+                                new_price = MarketPrice(
+                                    commodity_name=commodity_name,
+                                    market_name=market_name,
+                                    market_state=market_state,
+                                    market_district=market_district,
+                                    open_price=open_price,
+                                    high_price=high_price,
+                                    low_price=low_price,
+                                    close_price=close_price,
+                                    price_date=price_date
+                                )
+                                db.session.add(new_price)
+                                synced_count += 1
+                        except Exception as e:
+                            errors.append(f"Error processing record: {str(e)}")
+                            continue
+                
+                db.session.commit()
+                
+            except requests.exceptions.RequestException as e:
+                errors.append(f"API error for {commodity_key}: {str(e)}")
+            except Exception as e:
+                errors.append(f"Processing error for {commodity_key}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'synced_count': synced_count,
+            'errors': errors if errors else None
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@buyer_auth_bp.route('/api/prices/<commodity>', methods=['GET'])
+def get_commodity_prices(commodity):
+    """
+    Get market prices for a specific commodity
+    Returns last 7 days of prices across all mandis
+    """
+    try:
+        # Normalize commodity name
+        commodity = commodity.strip()
+        
+        # Find prices
+        prices = MarketPrice.query.filter_by(commodity_name=commodity).order_by(
+            MarketPrice.price_date.desc()
+        ).limit(1000).all()
+        
+        if not prices:
+            return jsonify({
+                'commodity': commodity,
+                'prices': [],
+                'message': 'No price data available'
+            }), 200
+        
+        # Group by market and get latest prices
+        market_prices = {}
+        for price in prices:
+            market_key = f"{price.market_name}, {price.market_state}"
+            if market_key not in market_prices:
+                market_prices[market_key] = {
+                    'market_name': price.market_name,
+                    'market_state': price.market_state,
+                    'market_district': price.market_district,
+                    'prices': []
+                }
+            
+            market_prices[market_key]['prices'].append({
+                'date': price.price_date.isoformat(),
+                'open': price.open_price,
+                'high': price.high_price,
+                'low': price.low_price,
+                'close': price.close_price,
+                'volume': price.trading_volume
+            })
+        
+        return jsonify({
+            'commodity': commodity,
+            'markets': list(market_prices.values()),
+            'total_records': len(prices)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+

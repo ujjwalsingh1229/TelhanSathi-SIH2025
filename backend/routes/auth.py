@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import Farmer, OTPRecord
 from extensions import db
 from utils import generate_otp, send_otp_sms, calculate_otp_expiry, is_farmer_eligible_for_subsidy
+from models_marketplace import Chat, ChatMessage
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -333,3 +334,131 @@ def api_current_farmer():
         'date_of_birth': farmer.date_of_birth.isoformat() if farmer.date_of_birth else None,
         'gender': farmer.gender
     })
+
+
+# ===== FARMER CHAT API =====
+
+@auth_bp.route('/chats')
+@login_required
+def farmer_chats():
+    """Render farmer chats page"""
+    return render_template('farmer_chats.html')
+
+
+@auth_bp.route('/api/farmer/chats', methods=['GET'])
+def get_farmer_chats():
+    """Get all chats for farmer"""
+    try:
+        farmer_id_verified = session.get('farmer_id_verified')
+        if not farmer_id_verified:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get all chats for this farmer
+        chats = Chat.query.filter_by(farmer_id=farmer_id_verified, is_active=True).order_by(Chat.last_message_at.desc()).all()
+        
+        chats_data = []
+        for chat in chats:
+            # Get last message
+            last_message = ChatMessage.query.filter_by(chat_id=chat.id).order_by(ChatMessage.created_at.desc()).first()
+            
+            chats_data.append({
+                'id': chat.id,
+                'buyer_id': chat.buyer_id,
+                'crop_name': chat.crop_name,
+                'sell_request_id': chat.sell_request_id,
+                'buyer_offer_id': chat.buyer_offer_id,
+                'is_active': chat.is_active,
+                'created_at': chat.created_at.isoformat(),
+                'last_message': {
+                    'text': last_message.message if last_message else None,
+                    'sender': last_message.sender_type if last_message else None,
+                    'time': last_message.created_at.isoformat() if last_message else None
+                },
+                'message_count': len(chat.messages)
+            })
+        
+        return jsonify(chats_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/api/farmer/chats/<chat_id>/messages', methods=['GET'])
+def get_farmer_chat_messages(chat_id):
+    """Get all messages in a chat for farmer"""
+    try:
+        farmer_id_verified = session.get('farmer_id_verified')
+        if not farmer_id_verified:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Verify chat belongs to farmer
+        chat = Chat.query.filter_by(id=chat_id, farmer_id=farmer_id_verified).first()
+        if not chat:
+            return jsonify({'error': 'Chat not found'}), 404
+        
+        # Get all messages
+        messages = ChatMessage.query.filter_by(chat_id=chat_id).order_by(ChatMessage.created_at.asc()).all()
+        
+        messages_data = []
+        for msg in messages:
+            messages_data.append({
+                'id': msg.id,
+                'sender_type': msg.sender_type,
+                'sender_name': msg.sender_name,
+                'message': msg.message,
+                'created_at': msg.created_at.isoformat(),
+                'is_read': msg.is_read
+            })
+        
+        return jsonify(messages_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/api/farmer/chats/<chat_id>/messages', methods=['POST'])
+def send_farmer_chat_message(chat_id):
+    """Send a message in chat as farmer"""
+    try:
+        farmer_id_verified = session.get('farmer_id_verified')
+        if not farmer_id_verified:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Verify chat belongs to farmer
+        chat = Chat.query.filter_by(id=chat_id, farmer_id=farmer_id_verified).first()
+        if not chat:
+            return jsonify({'error': 'Chat not found'}), 404
+        
+        # Get farmer name from session or database
+        farmer = Farmer.query.filter_by(farmer_id=farmer_id_verified).first()
+        farmer_name = farmer.name if farmer else "Farmer"
+        
+        data = request.get_json()
+        message_text = data.get('message', '').strip()
+        
+        if not message_text:
+            return jsonify({'error': 'Message cannot be empty'}), 400
+        
+        # Create message
+        new_message = ChatMessage(
+            chat_id=chat_id,
+            sender_type='farmer',
+            sender_id=farmer_id_verified,
+            sender_name=farmer_name,
+            message=message_text
+        )
+        
+        # Update chat's last_message_at
+        chat.last_message_at = datetime.utcnow()
+        
+        db.session.add(new_message)
+        db.session.commit()
+        
+        return jsonify({
+            'id': new_message.id,
+            'message': new_message.message,
+            'sender_type': new_message.sender_type,
+            'created_at': new_message.created_at.isoformat()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+

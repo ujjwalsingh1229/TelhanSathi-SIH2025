@@ -248,7 +248,7 @@ def deal_review_page():
 
 @market_bp.route("/sell/create", methods=["POST"])
 def create_sell_request():
-    """Create a new sell request with photos - can be linked to a buyer offer"""
+    """Create a new sell request with photos"""
     if "farmer_id_verified" not in session:
         return jsonify({"error": "Not logged in"}), 401
     
@@ -260,7 +260,6 @@ def create_sell_request():
     quantity = float(request.form.get("quantity"))
     expected_price = float(request.form.get("expected_price"))
     harvest_date = request.form.get("harvest_date")
-    buyer_offer_id = request.form.get("buyer_offer_id")  # Optional: link to buyer offer
     
     # Create uploads directory
     uploads_dir = "static/uploads"
@@ -294,13 +293,6 @@ def create_sell_request():
     
     db.session.add(sell_request)
     db.session.flush()  # Get the ID before commit
-    
-    # Link to buyer offer if provided
-    if buyer_offer_id:
-        buyer_offer = BuyerOffer.query.get(buyer_offer_id)
-        if buyer_offer:
-            buyer_offer.sell_request_id = sell_request.id
-            buyer_offer.status = 'accepted'  # Mark offer as accepted
     
     # Save photos
     if photo1:

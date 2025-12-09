@@ -45,6 +45,7 @@ from routes.weather import weather_bp
 from routes.redemption_store import redemption_bp
 from routes.buyer_auth import buyer_auth_bp
 from routes.translation import translation_bp
+from routes.bidding import bidding_bp
 from translations import get_translation, TRANSLATIONS
 
 app.register_blueprint(auth_bp)
@@ -61,6 +62,7 @@ app.register_blueprint(weather_bp)
 app.register_blueprint(redemption_bp)
 app.register_blueprint(buyer_auth_bp)
 app.register_blueprint(translation_bp)
+app.register_blueprint(bidding_bp)
 
 # ----------------------- ROUTES -----------------------
 
@@ -116,12 +118,19 @@ def set_language_context():
     g.language = session.get('language', request.accept_languages.best_match(['en', 'hi', 'mr', 'gu']) or 'en')
 
 
+# ==================== WebSocket Initialization ====================
+from ml.websocket_server import socketio as ws_socketio
+
+# Initialize WebSocket
+ws_socketio.init_app(app)
+
+
 # ----------------------- APP RUN -----------------------
 if __name__ == '__main__':
     # ❗️IMPORTANT: Do NOT use db.create_all() when using Flask-Migrate
-    # Migrations now handle schema updateas.
+    # Migrations now handle schema updates.
     
-
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Run with WebSocket support
+    ws_socketio.run(app, debug=True, host='0.0.0.0', port=5000)
         # ----------------------- CUSTOM CLI COMMANDS -----------------------
 

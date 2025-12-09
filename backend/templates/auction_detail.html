@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block title %}Live Auction - Mandi Connect{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bidding.css') }}">
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="auction-detail-container">
+    <!-- Navigation -->
+    <div class="breadcrumb">
+        <a href="/bidding/buyer/auctions">← Back to Auctions</a>
+    </div>
+
+    <div class="auction-detail-grid">
+        <!-- Left Column: Image & Info -->
+        <div class="auction-left">
+            <!-- Main Image -->
+            <div class="auction-image-large">
+                <img id="mainImage" src="{{ url_for('static', filename='img/placeholder.jpg') }}" alt="Auction">
+                <div class="auction-status-badge" id="statusBadge">LIVE</div>
+                <div class="timer-badge" id="timerBadge">
+                    <span class="timer-icon">⏱️</span>
+                    <span id="timeDisplay">24h remaining</span>
+                </div>
+            </div>
+
+            <!-- Thumbnail Gallery -->
+            <div class="thumbnail-gallery" id="thumbnailGallery"></div>
+
+            <!-- Crop Details -->
+            <div class="crop-details-box">
+                <h2 id="cropNameLarge">Soybean</h2>
+                <p class="location-text">📍 <span id="locationText">Indore, Madhya Pradesh</span></p>
+                <p class="description-text" id="descriptionText">High-quality soybean crop, harvested recently with excellent quality.</p>
+
+                <!-- Seller Info Card -->
+                <div class="seller-card">
+                    <div class="seller-header">
+                        <div class="seller-avatar">👨‍🌾</div>
+                        <div class="seller-info">
+                            <span class="seller-name" id="sellerName">Farmer Name</span>
+                            <span class="seller-rating">⭐ 4.5 (12 reviews)</span>
+                        </div>
+                    </div>
+                    <div class="seller-stats">
+                        <div class="seller-stat">
+                            <span class="stat-value">15</span>
+                            <span class="stat-label">Auctions</span>
+                        </div>
+                        <div class="seller-stat">
+                            <span class="stat-value">92%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Bidding & Current Info -->
+        <div class="auction-right">
+            <!-- Price Information -->
+            <div class="price-card">
+                <div class="price-row">
+                    <span class="price-label">Quantity:</span>
+                    <span class="price-value" id="quantityDisplay">10 Quintals</span>
+                </div>
+                <hr>
+                <div class="price-row">
+                    <span class="price-label">Base Price:</span>
+                    <span class="price-value" id="basePriceDisplay">₹5,500/Q</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-label">Min Bid Price:</span>
+                    <span class="price-value" id="minBidDisplay">₹5,500</span>
+                </div>
+                <hr>
+                <div class="price-row highlight">
+                    <span class="price-label">Current Highest Bid:</span>
+                    <span class="current-bid" id="currentBidDisplay">₹5,650</span>
+                </div>
+                <div class="price-row small">
+                    <span class="bid-count">Placed by <span id="biddersCount">3</span> bidders</span>
+                </div>
+            </div>
+
+            <!-- Bidding Actions -->
+            <div class="bidding-section" id="biddingSection">
+                <h3>Place Your Bid</h3>
+
+                <!-- Bid Input -->
+                <div class="bid-input-group">
+                    <label for="bidAmount">Bid Amount (₹)</label>
+                    <div class="bid-input-wrapper">
+                        <span class="currency">₹</span>
+                        <input type="number" id="bidAmount" placeholder="Enter amount" min="0">
+                        <button type="button" class="btn-icon" onclick="incrementBid(100)" title="Add ₹100">+100</button>
+                        <button type="button" class="btn-icon" onclick="incrementBid(500)" title="Add ₹500">+500</button>
+                    </div>
+                    <small id="bidValidation" class="help-text"></small>
+                </div>
+
+                <!-- Place Bid Button -->
+                <button class="btn-primary btn-full" id="placeBidBtn" onclick="placeBid()">
+                    💰 Place Bid
+                </button>
+
+                <!-- Divider -->
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <!-- Auto-Bid Setup -->
+                <div class="auto-bid-section">
+                    <h4>Enable Auto-Bidding</h4>
+                    <p class="auto-bid-info">Automatically bid up to your maximum amount</p>
+
+                    <div class="auto-bid-input">
+                        <label for="maxBidAmount">Maximum Bid (₹)</label>
+                        <input type="number" id="maxBidAmount" placeholder="Maximum amount willing to pay">
+                    </div>
+
+                    <div class="auto-bid-input">
+                        <label for="autoBidIncrement">Auto-Bid Increment (₹)</label>
+                        <select id="autoBidIncrement">
+                            <option value="100">₹100</option>
+                            <option value="250">₹250</option>
+                            <option value="500">₹500</option>
+                            <option value="1000">₹1,000</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-secondary btn-full" onclick="enableAutoBid()">
+                        🤖 Enable Auto-Bidding
+                    </button>
+                </div>
+
+                <!-- Bidding Rules -->
+                <div class="bidding-rules">
+                    <h4>Bidding Rules</h4>
+                    <ul>
+                        <li>Minimum bid increment: ₹100</li>
+                        <li>Your bid must exceed the current highest bid</li>
+                        <li>All bids are binding and non-refundable</li>
+                        <li>Winner must complete transaction within 24 hours</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Winner Announcement (after auction ends) -->
+            <div class="winner-announcement" id="winnerAnnouncement" style="display: none;">
+                <div class="winner-content">
+                    <h3 id="winnerTitle">Auction Ended</h3>
+                    <p id="winnerMessage">You have won this auction!</p>
+                    <div class="winner-details">
+                        <div class="detail-row">
+                            <span>Final Price:</span>
+                            <span id="finalPrice">₹5,650</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Total Amount:</span>
+                            <span id="totalAmount">₹56,500</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary btn-full" onclick="goToTransaction()">
+                        ✅ Complete Transaction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bid History Section -->
+    <div class="bid-history-section">
+        <h3>Live Bid History</h3>
+        <div class="bid-history-table" id="bidHistoryTable">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading bid history...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let auctionId = null;
+    let socket = null;
+    let isAuctionActive = true;
+    let currentHighestBid = 0;
+    let userBids = [];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        auctionId = getAuctionIdFromUrl();
+        loadAuctionDetails();
+        setupWebSocket();
+        setupBidValidation();
+        startTimerUpdate();
+    });
+
+    // Get auction ID from URL
+    function getAuctionIdFromUrl() {
+        const path = window.location.pathname;
+        return path.split('/').pop();
+    }
+
+    // Load auction details from API
+    function loadAuctionDetails() {
+        fetch(`/bidding/buyer/auction/${auctionId}`)
+            .then(res => res.json())
+            .then(data => {
+                const auction = data.auction;
+                currentHighestBid = auction.current_highest_bid || auction.min_bid;
+
+                // Update UI
+                document.getElementById('cropNameLarge').textContent = auction.crop_name;
+                document.getElementById('locationText').textContent = auction.location;
+                document.getElementById('descriptionText').textContent = auction.description || 'No description provided';
+                document.getElementById('sellerName').textContent = auction.seller_name || 'Farmer';
+                document.getElementById('quantityDisplay').textContent = `${auction.quantity} Quintals`;
+                document.getElementById('basePriceDisplay').textContent = `₹${formatNumber(auction.base_price)}/Q`;
+                document.getElementById('minBidDisplay').textContent = `₹${formatNumber(auction.min_bid)}`;
+                document.getElementById('currentBidDisplay').textContent = `₹${formatNumber(currentHighestBid)}`;
+                document.getElementById('biddersCount').textContent = data.bidders_count || 0;
+
+                // Set images
+                if (auction.photo1_path) {
+                    document.getElementById('mainImage').src = auction.photo1_path;
+                }
+
+                // Load bid history
+                loadBidHistory();
+            })
+            .catch(err => {
+                console.error('Error loading auction:', err);
+                showError('Failed to load auction details');
+            });
+    }
+
+    // Setup WebSocket connection
+    function setupWebSocket() {
+        socket = io();
+
+        socket.on('connect', function() {
+            console.log('Connected to WebSocket');
+            socket.emit('join_auction', { auction_id: auctionId });
+        });
+
+        socket.on('bid_placed', function(data) {
+            console.log('New bid received:', data);
+            currentHighestBid = data.auction.current_bid;
+            document.getElementById('currentBidDisplay').textContent = `₹${formatNumber(currentHighestBid)}`;
+            document.getElementById('biddersCount').textContent = data.auction.bidders_count;
+            
+            // Reload bid history
+            loadBidHistory();
+        });
+
+        socket.on('you_were_outbid', function(data) {
+            showNotification('⚠️ You were outbid! New highest: ₹' + formatNumber(data.amount), 'warning');
+            currentHighestBid = data.amount;
+            document.getElementById('currentBidDisplay').textContent = `₹${formatNumber(currentHighestBid)}`;
+        });
+
+        socket.on('auction_ended', function(data) {
+            isAuctionActive = false;
+            document.getElementById('statusBadge').textContent = 'ENDED';
+            document.getElementById('biddingSection').style.display = 'none';
+            
+            // Show winner announcement
+            if (data.winning_buyer_id === getCurrentUserId()) {
+                showWinnerAnnouncement(data);
+            } else {
+                showAuctionEnded(data);
+            }
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from WebSocket');
+        });
+    }
+
+    // Setup bid validation
+    function setupBidValidation() {
+        document.getElementById('bidAmount').addEventListener('input', function() {
+            const bid = parseInt(this.value) || 0;
+            const validation = document.getElementById('bidValidation');
+
+            if (bid < currentHighestBid) {
+                validation.textContent = `❌ Bid must be at least ₹${formatNumber(currentHighestBid + 100)}`;
+                document.getElementById('placeBidBtn').disabled = true;
+            } else if (bid >= currentHighestBid) {
+                validation.textContent = `✅ Valid bid`;
+                document.getElementById('placeBidBtn').disabled = false;
+            } else {
+                validation.textContent = '';
+                document.getElementById('placeBidBtn').disabled = true;
+            }
+        });
+    }
+
+    // Increment bid
+    function incrementBid(amount) {
+        const current = parseInt(document.getElementById('bidAmount').value) || currentHighestBid;
+        document.getElementById('bidAmount').value = current + amount;
+        document.getElementById('bidAmount').dispatchEvent(new Event('input'));
+    }
+
+    // Place bid
+    function placeBid() {
+        if (!isAuctionActive) {
+            showError('This auction has ended');
+            return;
+        }
+
+        const bidAmount = parseInt(document.getElementById('bidAmount').value);
+
+        if (!bidAmount || bidAmount < currentHighestBid) {
+            showError(`Bid must be at least ₹${formatNumber(currentHighestBid + 100)}`);
+            return;
+        }
+
+        const btn = document.getElementById('placeBidBtn');
+        btn.disabled = true;
+        btn.textContent = 'Placing bid...';
+
+        // Emit via WebSocket
+        socket.emit('place_bid', {
+            auction_id: auctionId,
+            bid_amount: bidAmount
+        }, function(response) {
+            btn.disabled = false;
+            btn.textContent = '💰 Place Bid';
+
+            if (response.success) {
+                showNotification('✅ Bid placed successfully!', 'success');
+                document.getElementById('bidAmount').value = '';
+            } else {
+                showError(response.message || 'Failed to place bid');
+            }
+        });
+    }
+
+    // Enable auto-bid
+    function enableAutoBid() {
+        if (!isAuctionActive) {
+            showError('This auction has ended');
+            return;
+        }
+
+        const maxBid = parseInt(document.getElementById('maxBidAmount').value);
+        const increment = parseInt(document.getElementById('autoBidIncrement').value);
+
+        if (!maxBid || maxBid < currentHighestBid) {
+            showError(`Maximum bid must be at least ₹${formatNumber(currentHighestBid)}`);
+            return;
+        }
+
+        socket.emit('auto_bid', {
+            auction_id: auctionId,
+            max_bid_amount: maxBid,
+            auto_increment: increment
+        }, function(response) {
+            if (response.success) {
+                showNotification('✅ Auto-bidding enabled!', 'success');
+                document.getElementById('maxBidAmount').value = '';
+            } else {
+                showError(response.message || 'Failed to enable auto-bid');
+            }
+        });
+    }
+
+    // Load bid history
+    function loadBidHistory() {
+        fetch(`/bidding/auction/${auctionId}/live-updates`)
+            .then(res => res.json())
+            .then(data => {
+                const bids = data.bids || [];
+                const table = document.getElementById('bidHistoryTable');
+
+                if (bids.length === 0) {
+                    table.innerHTML = '<p class="no-bids">No bids yet. Be the first to bid!</p>';
+                    return;
+                }
+
+                let html = `
+                    <table class="bid-table">
+                        <thead>
+                            <tr>
+                                <th>Bidder</th>
+                                <th>Bid Amount</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                bids.forEach(bid => {
+                    const time = new Date(bid.timestamp).toLocaleTimeString();
+                    const status = bid.is_winning ? '🏆 Winning' : (bid.is_outbid ? '❌ Outbid' : '💾 Placed');
+                    
+                    html += `
+                        <tr ${bid.is_winning ? 'class="winning-bid"' : ''}>
+                            <td>${bid.buyer_name || 'Buyer #' + bid.buyer_id.substring(0, 8)}</td>
+                            <td>₹${formatNumber(bid.amount)}</td>
+                            <td>${time}</td>
+                            <td>${status}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                table.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Error loading bid history:', err);
+            });
+    }
+
+    // Show winner announcement
+    function showWinnerAnnouncement(data) {
+        const announcement = document.getElementById('winnerAnnouncement');
+        announcement.style.display = 'block';
+        
+        document.getElementById('winnerTitle').textContent = '🎉 You Won!';
+        document.getElementById('winnerMessage').textContent = 'Congratulations! You have won this auction.';
+        document.getElementById('finalPrice').textContent = `₹${formatNumber(data.final_price)}`;
+        document.getElementById('totalAmount').textContent = `₹${formatNumber(data.final_price * data.quantity)}`;
+    }
+
+    // Show auction ended (not winner)
+    function showAuctionEnded(data) {
+        const announcement = document.getElementById('winnerAnnouncement');
+        announcement.style.display = 'block';
+        
+        document.getElementById('winnerTitle').textContent = 'Auction Ended';
+        document.getElementById('winnerMessage').textContent = `This auction was won by another bidder. Final price: ₹${formatNumber(data.final_price)}`;
+        announcement.querySelector('.btn-primary').style.display = 'none';
+    }
+
+    // Start timer update
+    function startTimerUpdate() {
+        setInterval(updateTimer, 1000);
+    }
+
+    // Update timer
+    function updateTimer() {
+        fetch(`/bidding/auction/${auctionId}/live-updates`)
+            .then(res => res.json())
+            .then(data => {
+                const timeLeft = data.time_remaining || 0;
+                const timerDisplay = document.getElementById('timeDisplay');
+                
+                if (timeLeft <= 0) {
+                    timerDisplay.textContent = 'Auction Ended';
+                    isAuctionActive = false;
+                } else if (timeLeft < 60) {
+                    timerDisplay.textContent = `${timeLeft}s remaining`;
+                } else if (timeLeft < 3600) {
+                    const minutes = Math.floor(timeLeft / 60);
+                    timerDisplay.textContent = `${minutes}m remaining`;
+                } else {
+                    const hours = Math.floor(timeLeft / 3600);
+                    timerDisplay.textContent = `${hours}h remaining`;
+                }
+            })
+            .catch(err => console.error('Error updating timer:', err));
+    }
+
+    // Go to transaction
+    function goToTransaction() {
+        fetch(`/bidding/buyer/won-auctions`)
+            .then(res => res.json())
+            .then(data => {
+                const transaction = data.transactions.find(t => t.auction_id === auctionId);
+                if (transaction) {
+                    window.location.href = `/bidding/transaction/${transaction.id}`;
+                }
+            });
+    }
+
+    // Helper functions
+    function formatNumber(num) {
+        return new Intl.NumberFormat('en-IN').format(num);
+    }
+
+    function getCurrentUserId() {
+        // Get from session or localStorage
+        return sessionStorage.getItem('buyer_id') || '';
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notif = document.createElement('div');
+        notif.className = `notification notification-${type}`;
+        notif.textContent = message;
+        document.body.appendChild(notif);
+
+        setTimeout(() => notif.remove(), 5000);
+    }
+
+    function showError(message) {
+        showNotification('❌ ' + message, 'error');
+    }
+</script>
+{% endblock %}

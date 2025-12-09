@@ -820,8 +820,179 @@ function showCropDetails(cropKey) {
 
             // Open modal
             document.getElementById('cropModal').classList.add('active');
+            
+            // Load price history chart
+            loadPriceHistoryChart(cropKey);
         })
         .catch(err => console.error('Error loading crop details:', err));
+}
+
+async function loadPriceHistoryChart(cropKey) {
+    try {
+        const resp = await fetch(`/crop-economics/api/price-history/${cropKey}`, { credentials: 'same-origin' });
+        console.log('Price history response:', resp.status);
+        
+        if (!resp.ok) {
+            console.error('Failed to load price history:', resp.status);
+            showChartError('Failed to load price history');
+            return;
+        }
+
+        const historyData = await resp.json();
+        console.log('Price history data:', historyData);
+
+        // Get the modal content
+        const modalContent = document.querySelector('.modal-content');
+        if (!modalContent) {
+            console.error('Modal content not found');
+            return;
+        }
+
+        // Check if chart container already exists
+        let chartContainer = document.getElementById('priceHistoryChartContainer');
+        if (chartContainer) {
+            chartContainer.remove();
+        }
+
+        // Create chart container
+        chartContainer = document.createElement('div');
+        chartContainer.id = 'priceHistoryChartContainer';
+        chartContainer.className = 'modal-section';
+        chartContainer.style.cssText = `
+            margin-top: 16px;
+            margin-bottom: 16px;
+        `;
+        
+        const chartTitle = document.createElement('div');
+        chartTitle.className = 'modal-section-title';
+        chartTitle.textContent = '6-Month Price Trend';
+        chartContainer.appendChild(chartTitle);
+        
+        const chartWrapper = document.createElement('div');
+        chartWrapper.style.cssText = `
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            height: 280px;
+        `;
+        chartWrapper.innerHTML = '<canvas id="priceHistoryChart"></canvas>';
+        chartContainer.appendChild(chartWrapper);
+        
+        // Insert chart after the last modal-section
+        const lastSection = modalContent.querySelector('.modal-section:last-of-type');
+        if (lastSection) {
+            lastSection.after(chartContainer);
+        } else {
+            modalContent.appendChild(chartContainer);
+        }
+
+        // Get canvas context
+        const ctx = document.getElementById('priceHistoryChart');
+        if (!ctx) {
+            console.error('Chart canvas not found');
+            showChartError('Could not create chart');
+            return;
+        }
+
+        // Destroy existing chart if any
+        try {
+            if (window.priceHistoryChart && typeof window.priceHistoryChart.destroy === 'function') {
+                window.priceHistoryChart.destroy();
+            }
+        } catch (e) {
+            console.log('Could not destroy previous chart:', e);
+        }
+        window.priceHistoryChart = null;
+
+        // Prepare data
+        const history = historyData.history || [];
+        console.log('History records:', history.length);
+        
+        if (history.length === 0) {
+            chartWrapper.innerHTML = '<p style="text-align: center; color: #999; padding: 40px 20px;">No price history available</p>';
+            return;
+        }
+
+        // Create bar chart with monthly data
+        const ctx2d = ctx.getContext('2d');
+        window.priceHistoryChart = new Chart(ctx2d, {
+            type: 'bar',
+            data: {
+                labels: history.map(h => h.month || h.date),
+                datasets: [{
+                    label: 'Average Price (₹)',
+                    data: history.map(h => h.price),
+                    backgroundColor: '#4CAF50',
+                    borderColor: '#2E7D32',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    hoverBackgroundColor: '#2E7D32',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'x',
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, weight: 'bold' },
+                            padding: 12,
+                            color: '#333'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Last 12 Months Price Trend',
+                        font: { size: 14, weight: 'bold' },
+                        color: '#388e3c',
+                        padding: 12
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + Math.round(value);
+                            },
+                            font: { size: 11 },
+                            color: '#666'
+                        },
+                        grid: {
+                            color: '#e5e7eb',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#666'
+                        },
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading price history chart:', error);
+        showChartError('Failed to load price history: ' + error.message);
+    }
+}
+
+function showChartError(message) {
+    let chartContainer = document.getElementById('priceHistoryChartContainer');
+    if (chartContainer) {
+        chartContainer.innerHTML = `<p style="text-align: center; color: #d32f2f; padding: 40px 20px; font-size: 14px;">${message}</p>`;
+    }
 }
 
 function closeCropModal(event) {

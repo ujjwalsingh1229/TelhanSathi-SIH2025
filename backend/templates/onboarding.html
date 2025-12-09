@@ -1,189 +1,854 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="hi">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Onboarding — Sahayak</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>खेत की प्रोफाइल सेटअप - Sahayak</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5fdf8 0%, #eef9f5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d5016 0%, #3d6b1f 100%);
+            padding: 40px 24px;
+            color: white;
+            text-align: center;
+            display: none;
+        }
+
+        .header.show {
+            display: block;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .logo img {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .header .time-note {
+            font-size: 12px;
+            opacity: 0.75;
+            margin-top: 12px;
+        }
+
+        .content {
+            padding: 32px 24px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step.active {
+            display: flex;
+        }
+
+        .step h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a3d0a;
+            line-height: 1.3;
+        }
+
+        .step .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-top: -12px;
+        }
+
+        /* Crop Grid - 2 Columns */
+        .crop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .crop-card {
+            background: #f8fdf9;
+            border: 2px solid #e0e8e1;
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .crop-card:hover {
+            border-color: #2d5016;
+            background: #f0f8f2;
+        }
+
+        .crop-card.selected {
+            background: #2d5016;
+            border-color: #2d5016;
+            color: white;
+        }
+
+        .crop-card img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+        }
+
+        .crop-card .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .crop-card.selected .label {
+            color: white;
+        }
+
+        /* Water Type Chips */
+        .water-chips {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .chip {
+            padding: 14px 16px;
+            border: 2px solid #e0e8e1;
+            border-radius: 10px;
+            background: #f8fdf9;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .chip:hover {
+            border-color: #2d5016;
+            background: #f0f8f2;
+        }
+
+        .chip.selected {
+            background: #2d5016;
+            border-color: #2d5016;
+            color: white;
+        }
+
+        /* Soil Grid - 3 Columns */
+        .soil-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .soil-card {
+            background: #f8fdf9;
+            border: 2px solid #e0e8e1;
+            border-radius: 12px;
+            padding: 18px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .soil-card:hover {
+            border-color: #2d5016;
+            background: #f0f8f2;
+        }
+
+        .soil-card.selected {
+            background: #2d5016;
+            border-color: #2d5016;
+            color: white;
+        }
+
+        .soil-card img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+
+        .soil-card .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .soil-card.selected .label {
+            color: white;
+        }
+
+        /* Input Fields */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            padding: 12px 14px;
+            border: 2px solid #e0e8e1;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: border 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2d5016;
+            background: #f8fdf9;
+        }
+
+        /* Range Slider */
+        .range-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .range-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .range-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d5016;
+        }
+
+        .unit-toggle {
+            display: flex;
+            gap: 6px;
+            background: #f0f0f0;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .unit-btn {
+            padding: 6px 10px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .unit-btn.active {
+            background: white;
+            color: #2d5016;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e8e1;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2d5016;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(45, 80, 22, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2d5016;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(45, 80, 22, 0.3);
+        }
+
+        /* Select Dropdowns */
+        .select-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #2d5016;
+            color: white;
+            flex: 1;
+            font-size: 15px;
+            padding: 16px 20px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #245010;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-icon {
+            background: transparent;
+            color: #2d5016;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #f0f8f2;
+        }
+
+        .material-icons {
+            font-size: 24px;
+            vertical-align: middle;
+        }
+
+        /* Loading State */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            padding: 40px 24px;
+            text-align: center;
+        }
+
+        .pulse {
+            width: 60px;
+            height: 60px;
+            background: #2d5016;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .loading-note {
+            font-size: 13px;
+            color: #999;
+        }
+
+        /* Success State */
+        .success-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 40px 24px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: #2d5016;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+        }
+
+        .success-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a3d0a;
+        }
+
+        .success-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-top: 1px solid #e8e8e8;
+            background: #fafafa;
+            gap: 12px;
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: #e0e8e1;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #2d5016;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .crop-grid,
+            .water-chips,
+            .soil-grid {
+                gap: 10px;
+            }
+
+            .btn-primary {
+                font-size: 14px;
+                padding: 14px 16px;
+            }
+        }
+    </style>
 </head>
-
 <body>
-    <div class="onboard-wrap">
-        <div class="card">
+    <div class="container">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
 
-            <!-- Step 0: Welcome -->
+        <!-- Header only shown on first step -->
+        <div class="header show" id="headerSection">
+            <div class="logo">
+                <img src="static/img/agri_logo.jpg" alt="Sahayak">
+            </div>
+            <h1>नमस्ते किसान जी! 🙏</h1>
+            <p>आइए अपने खेत की प्रोफाइल बनाएं</p>
+            <div class="time-note">लगभग 3-4 मिनट में पूरा हो जाएगा</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Step 1: Welcome -->
             <div class="step active" data-step="0">
-                <div class="header-hero">
-                    <div class="hero-illustration">
-                        <svg width="48" height="48" viewBox="0 0 24 24">
-                            <circle cx="12" cy="8" r="3" fill="#1b5e20"/>
-                            <path d="M4 20c1-5 7-6 8-6s7 1 8 6z" fill="#388e3c"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h1 class="h1">Namaste, {{ session.get('farmer_kisan_id') or 'Kisan' }} ji!<br>
-                            Let's set up your farm profile.
-                        </h1>
-                        <p class="p-small">Designing a friendly chat with an agricultural expert, not filling out a bank application.</p>
-                        <p class="small-note">This will take ~30 seconds.</p>
-                    </div>
-                </div>
-                <button id="startBtn" class="big-btn">Shuru Karein</button>
+                <button class="btn btn-primary" style="margin-top: 20px;" onclick="goToStep(1)">
+                    शुरू करें
+                    <span class="material-icons">arrow_forward</span>
+                </button>
             </div>
 
             <!-- Step 1: Crop Selection -->
             <div class="step" data-step="1">
-                <h2 class="h1">Abhi aapne kaunsi fasal lagayi hai?</h2>
-                <p class="small-note">Tap the image that matches your main crop.</p>
-
+                <h2>आप कौन सी तेल वाली फसल लगाते हैं?</h2>
+                <p class="subtitle">अपनी मुख्य फसल चुनें</p>
+                
                 <div class="crop-grid">
-                    <div class="crop-card" tabindex="0" data-crop="paddy">
-                        <img src="{{ url_for('static', filename='img/paddy.svg') }}" alt="Paddy">
-                        <div class="label">Dhaan</div>
+                    <div class="crop-card" onclick="selectCrop(this, 'soybean')">
+                        <div style="font-size: 40px;">🌱</div>
+                        <div class="label">सोयाबीन</div>
                     </div>
-
-                    <div class="crop-card" tabindex="0" data-crop="maize">
-                        <img src="{{ url_for('static', filename='img/maize.svg') }}" alt="Maize">
-                        <div class="label">Makka</div>
+                    <div class="crop-card" onclick="selectCrop(this, 'mustard')">
+                        <div style="font-size: 40px;">🌾</div>
+                        <div class="label">सरसों</div>
                     </div>
-
-                    <div class="crop-card" tabindex="0" data-crop="sugarcane">
-                        <img src="{{ url_for('static', filename='img/sugarcane.svg') }}" alt="Sugarcane">
-                        <div class="label">Ganna</div>
+                    <div class="crop-card" onclick="selectCrop(this, 'sunflower')">
+                        <div style="font-size: 40px;">🌻</div>
+                        <div class="label">सूरजमुखी</div>
                     </div>
-
-                    <div class="crop-card" tabindex="0" data-crop="other">
-                        <img src="{{ url_for('static', filename='img/other.svg') }}" alt="Other">
-                        <div class="label">Other</div>
+                    <div class="crop-card" onclick="selectCrop(this, 'safflower')">
+                        <div style="font-size: 40px;">🌸</div>
+                        <div class="label">कुसुम</div>
                     </div>
-                </div>
-
-                <div class="controls">
-                    <input id="cropInput" name="crop" type="hidden" value="{{ pre.crop }}">
-                    <button id="nextFromCrop" class="big-btn next-btn" disabled>Next</button>
+                    <div class="crop-card" onclick="selectCrop(this, 'groundnut')">
+                        <div style="font-size: 40px;">🥜</div>
+                        <div class="label">मूंगफली</div>
+                    </div>
+                    <div class="crop-card" onclick="selectCrop(this, 'cotton')">
+                        <div style="font-size: 40px;">🤍</div>
+                        <div class="label">कपास</div>
+                    </div>
+                    <div class="crop-card" onclick="selectCrop(this, 'sesame')">
+                        <div style="font-size: 40px;">🌻</div>
+                        <div class="label">तिल</div>
+                    </div>
+                    <div class="crop-card" onclick="selectCrop(this, 'castor')">
+                        <div style="font-size: 40px;">🌿</div>
+                        <div class="label">अरंडी</div>
+                    </div>
                 </div>
             </div>
 
             <!-- Step 2: Land & Irrigation -->
             <div class="step" data-step="2">
-                <h2 class="h1">Khet ka kul size kya hai?</h2>
-
-                <div class="range-wrap">
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <div class="slider-value" id="acresValue">{{ pre.acres or 2 }} Acres</div>
-
+                <h2>आपके खेत का आकार कितना है?</h2>
+                
+                <div class="range-group">
+                    <div class="range-display">
+                        <span class="range-value" id="acreDisplay">2 एकड़</span>
                         <div class="unit-toggle">
-                            <div class="unit-pill active" data-unit="acre">Acre</div>
-                            <div class="unit-pill" data-unit="hectare">Hectare</div>
-                            <div class="unit-pill" data-unit="bigha">Bigha</div>
+                            <button class="unit-btn active" onclick="changeUnit(this, 'acre')">एकड़</button>
+                            <button class="unit-btn" onclick="changeUnit(this, 'hectare')">हेक्टेयर</button>
+                            <button class="unit-btn" onclick="changeUnit(this, 'bigha')">बीघा</button>
                         </div>
                     </div>
-
-                    <input id="acresRange" type="range" min="0.5" max="50" step="0.5" value="{{ pre.acres or 2 }}">
+                    <input type="range" id="sizeRange" min="0.5" max="50" step="0.5" value="2" oninput="updateSize()">
                 </div>
 
-                <h3 class="h1" style="margin-top:12px">Pani kaisa hai aapke khet mein?</h3>
-
-                <div class="chips" role="list">
-                    <div class="chip" data-water-type="freshwater">💧 Freshwater</div>
-                    <div class="chip" data-water-type="salt_water">🧂 Salt Water</div>
-                    <div class="chip" data-water-type="brackish_water">⚓ Brackish Water</div>
+                <h2 style="margin-top: 20px;">आपके खेत में पानी कैसा है? 💧</h2>
+                <div class="water-chips">
+                    <div class="chip" onclick="selectWater(this, 'freshwater')">ताजा पानी</div>
+                    <div class="chip" onclick="selectWater(this, 'saltwater')">खारा पानी</div>
                 </div>
 
-                <div class="controls">
-                    <input id="waterTypeInput" name="water_type" type="hidden">
-                    <input id="districtInput" name="district" placeholder="Apka zila (optional)"
-                        style="flex:1;padding:10px;border-radius:10px;border:1px solid #eee;margin-top:8px">
-                </div>
-
-                <div style="display:flex;gap:8px;margin-top:12px">
-                    <button id="nextFromSize" class="big-btn" style="flex:1" disabled>Next</button>
-                    <button id="nextFromIrrigation" class="big-btn" style="flex:1;background:#9e9e9e" disabled>Next</button>
+                <div class="input-group" style="margin-top: 16px;">
+                    <label>आपका जिला (वैकल्पिक)</label>
+                    <input type="text" id="districtInput" placeholder="जैसे: इंदौर, नागपुर">
                 </div>
             </div>
 
             <!-- Step 3: Harvest Timing -->
             <div class="step" data-step="3">
-                <h2 class="h1">Katayi kab tak hone ki ummeed hai?</h2>
-                <p class="small-note">This helps us suggest the best Oilseed for the next season.</p>
-
-                <div style="display:flex;gap:8px;margin-top:12px">
-                    <select id="harvestMonth" style="flex:1;padding:12px;border-radius:10px;border:1px solid #eee">
-                        <option>January</option><option>February</option><option>March</option>
-                        <option>April</option><option>May</option><option>June</option>
-                        <option>July</option><option>August</option><option>September</option>
-                        <option selected>October</option><option>November</option><option>December</option>
-                    </select>
-
-                    <select id="harvestYear" style="flex:1;padding:12px;border-radius:10px;border:1px solid #eee">
-                        <option>2025</option><option selected>2026</option><option>2027</option>
-                    </select>
-                </div>
-
-                <div style="display:flex;gap:8px;margin-top:12px">
-                    <button id="nextFromHarvest" class="big-btn" style="flex:1">Next</button>
+                <h2>कटाई कब तक होने की उम्मीद है? 🌾</h2>
+                <p class="subtitle">इससे हम अगली फसल के लिए सुझाव दे सकेंगे</p>
+                
+                <div class="select-row">
+                    <div class="input-group">
+                        <label>महीना</label>
+                        <select id="harvestMonth">
+                            <option>जनवरी</option>
+                            <option>फरवरी</option>
+                            <option>मार्च</option>
+                            <option>अप्रैल</option>
+                            <option>मई</option>
+                            <option>जून</option>
+                            <option>जुलाई</option>
+                            <option>अगस्त</option>
+                            <option>सितंबर</option>
+                            <option selected>अक्टूबर</option>
+                            <option>नवंबर</option>
+                            <option>दिसंबर</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>साल</label>
+                        <select id="harvestYear">
+                            <option>2025</option>
+                            <option selected>2026</option>
+                            <option>2027</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <!-- Step 4: Soil Type -->
             <div class="step" data-step="4">
-                <h2 class="h1">Mitti kis tarah ki hai?</h2>
-                <p class="small-note">Tap the texture that looks like your field.</p>
-
-                <div class="soil-scroll">
-                    <div class="soil-card" tabindex="0" data-soil="black">
-                        <img src="{{ url_for('static', filename='img/soil_black.svg') }}" alt="Black soil">
-                        <div class="label">Kali Mitti</div>
+                <h2>आपकी मिट्टी किस तरह की है? 🌍</h2>
+                <p class="subtitle">अपने खेत की मिट्टी की बनावट से मिलती एक तस्वीर चुनें</p>
+                
+                <div class="soil-grid">
+                    <div class="soil-card" onclick="selectSoil(this, 'black')">
+                        <div style="font-size: 44px;">⬛</div>
+                        <div class="label">काली मिट्टी</div>
                     </div>
-
-                    <div class="soil-card" tabindex="0" data-soil="sandy">
-                        <img src="{{ url_for('static', filename='img/soil_sandy.svg') }}" alt="Sandy soil">
-                        <div class="label">Retili Mitti</div>
+                    <div class="soil-card" onclick="selectSoil(this, 'sandy')">
+                        <div style="font-size: 44px;">🟨</div>
+                        <div class="label">बलुई मिट्टी</div>
                     </div>
-
-                    <div class="soil-card" tabindex="0" data-soil="clay">
-                        <img src="{{ url_for('static', filename='img/soil_clay.svg') }}" alt="Clay soil">
-                        <div class="label">Chikni Mitti</div>
+                    <div class="soil-card" onclick="selectSoil(this, 'clay')">
+                        <div style="font-size: 44px;">🟫</div>
+                        <div class="label">चिकनी मिट्टी</div>
                     </div>
-                </div>
-
-                <div style="margin-top:12px">
-                    <input id="soilInput" name="soil" type="hidden">
-                    <button id="doneBtn" class="big-btn" disabled>Done — Get Suggestion</button>
                 </div>
             </div>
 
-            <!-- Step 5: Loader -->
-            <div class="step" data-step="6">
-                <div class="loader-wrap">
+            <!-- Step 5: Loading -->
+            <div class="step" data-step="5">
+                <div class="loading-container">
                     <div class="pulse"></div>
-                    <div id="loaderText" class="loader-text">... Checking Soil Data ...</div>
-                    <div class="small-muted">Our expert is checking market prices and subsidies for you.</div>
+                    <div class="loading-text">आपकी प्रोफाइल बनाई जा रही है...</div>
+                    <div class="loading-note">कृपया प्रतीक्षा करें, बस कुछ क्षण में पूरा हो जाएगा</div>
                 </div>
             </div>
 
-            <!-- Hidden Form -->
-            <form id="onboardHiddenForm" method="post" action="/onboarding" style="display:none">
-
-                <input id="cropHidden" name="crop">
-                <input id="acresHidden" name="acres">
-                <input id="districtHidden" name="district">
-                <input id="harvestHidden" name="harvest_date">
-
-                <!-- newly added -->
-                <input id="waterTypeHidden" name="water_type">
-                <input id="soilHidden" name="soil">
-
-            </form>
-
+            <!-- Step 6: Success -->
+            <div class="step" data-step="6">
+                <div class="success-container">
+                    <div class="success-icon">✓</div>
+                    <div class="success-title">बहुत बढ़िया! 🎉</div>
+                    <div class="success-text">आपकी खेत की प्रोफाइल तैयार हो गई है। अब आप Sahayak की सभी सेवाएं ले सकते हैं।</div>
+                </div>
+            </div>
         </div>
 
-        <div class="footer-note">
-            Big & tappable controls. Visual-first, progressive disclosure — one question at a time.
+        <!-- Navigation bar with back and next buttons -->
+        <div class="nav-bar">
+            <button class="btn-icon" id="backBtn" onclick="goToStep(currentStep - 1)" style="display: none;">
+                <span class="material-icons">arrow_back</span>
+            </button>
+            <div id="stepCounter" style="font-size: 13px; color: #999; flex: 1; text-align: center;"></div>
+            <button class="btn btn-primary" id="nextBtn" style="display: none; flex: 1;" onclick="goToStep(currentStep + 1)">
+                अगला <span class="material-icons">arrow_forward</span>
+            </button>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/onboarding.js') }}"></script>
+    <script>
+        let currentStep = 0;
+        let totalSteps = 7;
+        let selectedCrop = null;
+        let selectedWater = null;
+        let selectedSoil = null;
 
+        function goToStep(step) {
+            // Validation
+            if (step === 1 && currentStep === 0) {
+                currentStep = step;
+            } else if (step === 2 && currentStep === 1 && !selectedCrop) {
+                alert('कृपया एक फसल चुनें');
+                return;
+            } else if (step === 3 && currentStep === 2 && !selectedWater) {
+                alert('कृपया पानी का प्रकार चुनें');
+                return;
+            } else if (step === 4 && currentStep === 3) {
+                currentStep = step;
+            } else if (step === 5 && currentStep === 4 && !selectedSoil) {
+                alert('कृपया मिट्टी का प्रकार चुनें');
+                return;
+            } else if (step === 5) {
+                currentStep = step;
+                loadingStart();
+                return;
+            } else if (step >= 0 && step < totalSteps) {
+                currentStep = step;
+            } else {
+                return;
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update steps
+            document.querySelectorAll('.step').forEach((step, index) => {
+                step.classList.remove('active');
+            });
+            document.querySelector([data-step="${currentStep}"]).classList.add('active');
+
+            // Update header visibility
+            const headerSection = document.getElementById('headerSection');
+            if (currentStep === 0) {
+                headerSection.classList.add('show');
+            } else {
+                headerSection.classList.remove('show');
+            }
+
+            // Update navigation
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const stepCounter = document.getElementById('stepCounter');
+
+            if (currentStep === 0 || currentStep === 5 || currentStep === 6) {
+                backBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                stepCounter.innerHTML = '';
+            } else {
+                backBtn.style.display = 'flex';
+                stepCounter.innerHTML = चरण ${currentStep} में से 4;
+                
+                if (currentStep === 4) {
+                    nextBtn.innerHTML = 'पूरा करें <span class="material-icons">check</span>';
+                    nextBtn.style.display = 'flex';
+                } else {
+                    nextBtn.innerHTML = 'अगला <span class="material-icons">arrow_forward</span>';
+                    nextBtn.style.display = 'flex';
+                }
+            }
+
+            // Update progress bar
+            const progress = (currentStep / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function selectCrop(element, crop) {
+            document.querySelectorAll('.crop-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedCrop = crop;
+        }
+
+        function selectWater(element, water) {
+            document.querySelectorAll('.water-chips .chip').forEach(chip => chip.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedWater = water;
+        }
+
+        function selectSoil(element, soil) {
+            document.querySelectorAll('.soil-grid .soil-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedSoil = soil;
+        }
+
+        function changeUnit(element, unit) {
+            document.querySelectorAll('.unit-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            updateSize();
+        }
+
+        function updateSize() {
+            const range = document.getElementById('sizeRange');
+            const display = document.getElementById('acreDisplay');
+            const value = parseFloat(range.value);
+            const activeUnit = document.querySelector('.unit-btn.active').textContent.trim();
+
+            let convertedValue, unitLabel;
+            if (activeUnit === 'एकड़') {
+                convertedValue = value;
+                unitLabel = 'एकड़';
+            } else if (activeUnit === 'हेक्टेयर') {
+                convertedValue = (value * 0.4047).toFixed(1);
+                unitLabel = 'हेक्टेयर';
+            } else {
+                convertedValue = (value * 1.65).toFixed(1);
+                unitLabel = 'बीघा';
+            }
+
+            display.textContent = ${convertedValue} ${unitLabel};
+        }
+
+        function loadingStart() {
+            setTimeout(() => {
+                goToStep(6);
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            }, 2000);
+        }
+
+        // Initialize
+        updateUI();
+    </script>
 </body>
 </html>
