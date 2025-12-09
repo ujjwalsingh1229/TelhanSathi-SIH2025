@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Garden Monitor | SIH 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #0f1931;
+            --card-bg: #16213e;
+            --card-hover: #1f2e48;
+            --text-primary: #ecf0f1;
+            --text-secondary: #94a3b8;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f97316;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --accent-purple: #a78bfa;
+            --accent-cyan: #06b6d4;
+            --border-color: #1e293b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-badge.online {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.info {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.9);
+            }
+        }
+
+        /* Grid Layouts */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--card-bg), var(--card-hover));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--card-accent), transparent);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--card-accent);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .metric-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .metric-icon {
+            font-size: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+        .metric-status {
+            font-size: 0.75rem;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .status-optimal {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .status-good {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-alert {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, var(--card-bg), var(--card-hover));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* Gauge Charts */
+        .gauges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .gauge-card {
+            background: linear-gradient(135deg, var(--card-bg), var(--card-hover));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .gauge-container {
+            height: 200px;
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .gauge-value {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* System Info */
+        .system-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .system-card {
+            background: linear-gradient(135deg, var(--card-bg), var(--card-hover));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .system-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .system-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .system-row:last-child {
+            border-bottom: none;
+        }
+
+        .system-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .system-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .metric-card {
+                padding: 16px;
+            }
+
+            .metric-value {
+                font-size: 2rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gauges-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🌱 Smart Garden Monitor</h1>
+            <p>Real-Time IoT Sensor Dashboard - SIH 2025</p>
+            <div class="status-bar">
+                <span class="status-badge online" id="statusBadge">
+                    <span class="status-dot"></span> System Online
+                </span>
+                <span class="status-badge info" id="lastUpdateBadge">
+                    <span class="status-dot"></span> Last Update: --
+                </span>
+                <span class="status-badge info" id="datapointsBadge">
+                    📊 Data Points: 0
+                </span>
+            </div>
+        </div>
+
+        <!-- Main Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card" style="--card-accent: var(--accent-orange)">
+                <div class="metric-header">
+                    <span class="metric-title">🌡 Air Temperature</span>
+                    <span class="metric-icon">🌡</span>
+                </div>
+                <div class="metric-value" style="color: var(--accent-orange)">
+                    <span id="airTemp">--</span><span class="metric-unit">°C</span>
+                </div>
+                <div class="metric-status" id="tempStatus">--</div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--accent-blue)">
+                <div class="metric-header">
+                    <span class="metric-title">💧 Humidity</span>
+                    <span class="metric-icon">💧</span>
+                </div>
+                <div class="metric-value" style="color: var(--accent-blue)">
+                    <span id="airHum">--</span><span class="metric-unit">%</span>
+                </div>
+                <div class="metric-status" id="humStatus">--</div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--accent-red)">
+                <div class="metric-header">
+                    <span class="metric-title">🔥 Heat Index</span>
+                    <span class="metric-icon">🔥</span>
+                </div>
+                <div class="metric-value" style="color: var(--accent-red)">
+                    <span id="heatIndex">--</span><span class="metric-unit">°C</span>
+                </div>
+                <div class="metric-status" id="heatStatus">Feels Like</div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--accent-green)">
+                <div class="metric-header">
+                    <span class="metric-title">🌱 Soil Moisture</span>
+                    <span class="metric-icon">🌱</span>
+                </div>
+                <div class="metric-value" style="color: var(--accent-green)">
+                    <span id="soilMoist">--</span><span class="metric-unit">%</span>
+                </div>
+                <div class="metric-status" id="moistStatus">--</div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--accent-purple)">
+                <div class="metric-header">
+                    <span class="metric-title">🪱 Soil Temperature</span>
+                    <span class="metric-icon">🪱</span>
+                </div>
+                <div class="metric-value" style="color: var(--accent-purple)">
+                    <span id="soilTemp">--</span><span class="metric-unit">°C</span>
+                </div>
+                <div class="metric-status" id="soilTempStatus">--</div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--accent-yellow)">
+                <div class="metric-header">
+                    <span class="metric-title">☀ Light Intensity</span>
+                    <span class="metric-icon">☀</span>
+                </div>
+                <div class="metric-value" style="color: var(--accent-yellow)">
+                    <span id="light">--</span><span class="metric-unit">Lux</span>
+                </div>
+                <div class="metric-status" id="lightStatus">--</div>
+            </div>
+        </div>
+
+        <!-- Trend Charts -->
+        <div class="charts-section">
+            <div class="section-header">
+                <span class="section-title">📈 Sensor Trends</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">🌡 Temperature Trends (Air & Soil)</div>
+                    <div class="chart-container">
+                        <canvas id="tempChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">💧 Moisture & Humidity Levels</div>
+                    <div class="chart-container">
+                        <canvas id="moistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">🔥 Heat Index vs Air Temperature</div>
+                    <div class="chart-container">
+                        <canvas id="heatIndexChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">☀ Light Intensity (Logarithmic Scale)</div>
+                    <div class="chart-container">
+                        <canvas id="lightChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">🎯 Environmental Overview (Radar)</div>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">🌈 Sensor Distribution (Polar Area)</div>
+                    <div class="chart-container">
+                        <canvas id="polarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gauge Visualizations -->
+        <div class="charts-section">
+            <div class="section-header">
+                <span class="section-title">🎯 Real-Time Gauges</span>
+            </div>
+            <div class="gauges-grid">
+                <div class="gauge-card">
+                    <div class="chart-title">Humidity Level</div>
+                    <div class="gauge-container">
+                        <canvas id="gaugeHum"></canvas>
+                        <div class="gauge-value" style="color: var(--accent-blue)">
+                            <span id="gaugeHumValue">--</span>%
+                        </div>
+                    </div>
+                </div>
+                <div class="gauge-card">
+                    <div class="chart-title">Soil Moisture Level</div>
+                    <div class="gauge-container">
+                        <canvas id="gaugeMoist"></canvas>
+                        <div class="gauge-value" style="color: var(--accent-green)">
+                            <span id="gaugeMoistValue">--</span>%
+                        </div>
+                    </div>
+                </div>
+                <div class="gauge-card">
+                    <div class="chart-title">Light Intensity</div>
+                    <div class="gauge-container">
+                        <canvas id="gaugeLight"></canvas>
+                        <div class="gauge-value" style="color: var(--accent-yellow)">
+                            <span id="gaugeLightValue">--</span> Lx
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="charts-section">
+            <div class="section-header">
+                <span class="section-title">⚙️ System Diagnostics</span>
+            </div>
+            <div class="system-grid">
+                <div class="system-card">
+                    <h3>📡 Connection Status</h3>
+                    <div class="system-row">
+                        <span class="system-label">Signal Strength (RSSI)</span>
+                        <span class="system-value" id="rssiValue">-- dBm</span>
+                    </div>
+                    <div class="system-row">
+                        <span class="system-label">Signal Quality</span>
+                        <span class="system-value" id="signalQuality">--</span>
+                    </div>
+                    <div class="system-row">
+                        <span class="system-label">Connection Status</span>
+                        <span class="system-value" style="color: var(--success)">Active</span>
+                    </div>
+                </div>
+
+                <div class="system-card">
+                    <h3>🔧 Raw Sensor Data</h3>
+                    <div class="system-row">
+                        <span class="system-label">Soil Moisture Raw</span>
+                        <span class="system-value" id="soilRaw">--</span>
+                    </div>
+                    <div class="system-row">
+                        <span class="system-label">Light Sensor Raw</span>
+                        <span class="system-value" id="lightRaw">--</span>
+                    </div>
+                    <div class="system-row">
+                        <span class="system-label">Data Resolution</span>
+                        <span class="system-value">12-bit ADC</span>
+                    </div>
+                </div>
+
+                <div class="system-card">
+                    <h3>⏱ System Uptime</h3>
+                    <div class="system-row">
+                        <span class="system-label">ESP32 Uptime</span>
+                        <span class="system-value" id="uptime">--</span>
+                    </div>
+                    <div class="system-row">
+                        <span class="system-label">Data Collection Rate</span>
+                        <span class="system-value">3 seconds</span>
+                    </div>
+                    <div class="system-row">
+                        <span class="system-label">Last Reading</span>
+                        <span class="system-value" id="lastReading">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart instances
+        let tempChart, moistChart, heatIndexChart, lightChart, radarChart, polarChart;
+        let gaugeHum, gaugeMoist, gaugeLight;
+
+        // Chart colors
+        const colors = {
+            airTemp: '#f97316',
+            soilTemp: '#a78bfa',
+            heatIndex: '#ef4444',
+            soilMoist: '#10b981',
+            humidity: '#3b82f6',
+            light: '#eab308',
+            cyan: '#06b6d4'
+        };
+
+        // Helper Functions
+        function getStatus(value, min, max, optMin, optMax) {
+            if (value >= optMin && value <= optMax) return { text: 'Optimal', class: 'status-optimal' };
+            if (value >= min && value <= max) return { text: 'Good', class: 'status-good' };
+            if (value < min) return { text: 'Low', class: 'status-warning' };
+            return { text: 'High', class: 'status-alert' };
+        }
+
+        // Special Status function for Lux
+        function getLuxStatus(value) {
+            if (value < 50) return { text: 'Dark', class: 'status-warning' };
+            if (value < 200) return { text: 'Dim', class: 'status-good' };
+            if (value < 1000) return { text: 'Optimal', class: 'status-optimal' };
+            if (value < 5000) return { text: 'Bright', class: 'status-good' };
+            return { text: 'Very Bright', class: 'status-alert' };
+        }
+
+        function formatUptime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            return `${h}h ${m}m ${s}s`;
+        }
+
+        function getSignalQuality(rssi) {
+            if (rssi >= -50) return { text: 'Excellent', color: '#22c55e' };
+            if (rssi >= -60) return { text: 'Good', color: '#10b981' };
+            if (rssi >= -70) return { text: 'Fair', color: '#f59e0b' };
+            return { text: 'Poor', color: '#ef4444' };
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        labels: { color: '#ecf0f1', font: { size: 11 }, padding: 10, usePointStyle: true }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(22, 33, 62, 0.95)',
+                        titleColor: '#ecf0f1',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#1e293b',
+                        borderWidth: 1,
+                        padding: 10
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                    y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                }
+            };
+
+            // Temperature Chart
+            const tempGradient = document.getElementById('tempChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            tempGradient.addColorStop(0, 'rgba(249, 115, 22, 0.4)');
+            tempGradient.addColorStop(1, 'rgba(249, 115, 22, 0)');
+
+            const soilTempGradient = document.getElementById('tempChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            soilTempGradient.addColorStop(0, 'rgba(167, 139, 250, 0.3)');
+            soilTempGradient.addColorStop(1, 'rgba(167, 139, 250, 0)');
+
+            tempChart = new Chart(document.getElementById('tempChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Air Temp (°C)', borderColor: colors.airTemp, backgroundColor: tempGradient, fill: true, data: [], tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: colors.airTemp, pointBorderColor: '#fff', pointBorderWidth: 2 },
+                        { label: 'Soil Temp (°C)', borderColor: colors.soilTemp, backgroundColor: soilTempGradient, fill: true, data: [], tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: colors.soilTemp, pointBorderColor: '#fff', pointBorderWidth: 2 }
+                    ]
+                },
+                options: commonOptions
+            });
+
+            // Moisture Chart
+            const moistGradient = document.getElementById('moistChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            moistGradient.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
+            moistGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+            const humGradient = document.getElementById('moistChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            humGradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+            humGradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            moistChart = new Chart(document.getElementById('moistChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Soil Moisture (%)', borderColor: colors.soilMoist, backgroundColor: moistGradient, fill: true, data: [], tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: colors.soilMoist, pointBorderColor: '#fff', pointBorderWidth: 2 },
+                        { label: 'Humidity (%)', borderColor: colors.humidity, backgroundColor: humGradient, fill: true, data: [], tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: colors.humidity, pointBorderColor: '#fff', pointBorderWidth: 2 }
+                    ]
+                },
+                options: commonOptions
+            });
+
+            // Heat Index Chart
+            const heatGradient = document.getElementById('heatIndexChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            heatGradient.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+            heatGradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
+
+            heatIndexChart = new Chart(document.getElementById('heatIndexChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Heat Index (°C)', borderColor: colors.heatIndex, backgroundColor: heatGradient, fill: true, data: [], tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: colors.heatIndex, pointBorderColor: '#fff', pointBorderWidth: 2 },
+                        { label: 'Air Temp (°C)', borderColor: colors.airTemp, borderDash: [5, 5], data: [], tension: 0.4, borderWidth: 2, fill: false, pointRadius: 2, pointBackgroundColor: colors.airTemp }
+                    ]
+                },
+                options: commonOptions
+            });
+
+            // Light Chart (Bar Chart with Logarithmic Scale)
+            lightChart = new Chart(document.getElementById('lightChart'), {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Light Intensity (Lux)', backgroundColor: 'rgba(234, 179, 8, 0.7)', borderColor: colors.light, borderWidth: 2, borderRadius: 8, data: [] }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            min: 1, // Minimum value for log scale
+                            ticks: { color: '#94a3b8', font: { size: 10 } },
+                            grid: { color: '#1e293b' }
+                        },
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+
+            // Radar Chart
+            radarChart = new Chart(document.getElementById('radarChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['Air Temp', 'Humidity', 'Soil Moisture', 'Soil Temp', 'Light', 'Heat Index'],
+                    datasets: [{ label: 'Current Readings (Normalized)', data: [0, 0, 0, 0, 0, 0], fill: true, backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: colors.soilMoist, borderWidth: 3, pointBackgroundColor: colors.soilMoist, pointBorderColor: '#fff', pointRadius: 5 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#ecf0f1' } } },
+                    scales: {
+                        r: { beginAtZero: true, max: 100, ticks: { display: false }, grid: { color: '#1e293b' }, pointLabels: { color: '#ecf0f1' } }
+                    }
+                }
+            });
+
+            // Polar Area Chart
+            polarChart = new Chart(document.getElementById('polarChart'), {
+                type: 'polarArea',
+                data: {
+                    labels: ['Air Temp', 'Humidity', 'Soil Moisture', 'Soil Temp', 'Light'],
+                    datasets: [{ data: [0, 0, 0, 0, 0], backgroundColor: ['rgba(249, 115, 22, 0.6)', 'rgba(59, 130, 246, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(167, 139, 250, 0.6)', 'rgba(234, 179, 8, 0.6)'], borderWidth: 1 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#ecf0f1' } } },
+                    scales: { r: { grid: { color: '#1e293b' }, ticks: { display: false } } }
+                }
+            });
+
+            // Gauges
+            const gaugeOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', rotation: -90, circumference: 180, plugins: { legend: { display: false }, tooltip: { enabled: false } } };
+
+            gaugeHum = new Chart(document.getElementById('gaugeHum'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: [colors.humidity, 'rgba(59, 130, 246, 0.1)'], borderWidth: 0 }] }, options: gaugeOptions });
+            gaugeMoist = new Chart(document.getElementById('gaugeMoist'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: [colors.soilMoist, 'rgba(16, 185, 129, 0.1)'], borderWidth: 0 }] }, options: gaugeOptions });
+            // Light Gauge scaled to 2000 Lux for display purposes
+            gaugeLight = new Chart(document.getElementById('gaugeLight'), { type: 'doughnut', data: { datasets: [{ data: [0, 2000], backgroundColor: [colors.light, 'rgba(234, 179, 8, 0.1)'], borderWidth: 0 }] }, options: gaugeOptions });
+        }
+
+        // Fetch and Update Data
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+
+                if (data.current) {
+                    const c = data.current;
+                    const h = data.history || [];
+
+                    // Update Metrics
+                    document.getElementById('airTemp').textContent = c.airTemp?.toFixed(1) || '--';
+                    document.getElementById('airHum').textContent = c.airHum?.toFixed(1) || '--';
+                    document.getElementById('heatIndex').textContent = c.heatIndex?.toFixed(1) || '--';
+                    document.getElementById('soilMoist').textContent = c.soilMoist || '--';
+                    document.getElementById('soilTemp').textContent = c.soilTemp?.toFixed(1) || '--';
+                    document.getElementById('light').textContent = c.light?.toFixed(0) || '--';
+
+                    // Update Status
+                    const tempStat = getStatus(c.airTemp, 15, 35, 20, 28);
+                    const humStat = getStatus(c.airHum, 30, 80, 40, 70);
+                    const moistStat = getStatus(c.soilMoist, 20, 80, 40, 60);
+                    const soilTempStat = getStatus(c.soilTemp, 15, 30, 18, 25);
+                    const lightStat = getLuxStatus(c.light);
+
+                    document.getElementById('tempStatus').textContent = tempStat.text;
+                    document.getElementById('tempStatus').className = `metric-status ${tempStat.class}`;
+                    document.getElementById('humStatus').textContent = humStat.text;
+                    document.getElementById('humStatus').className = `metric-status ${humStat.class}`;
+                    document.getElementById('moistStatus').textContent = moistStat.text;
+                    document.getElementById('moistStatus').className = `metric-status ${moistStat.class}`;
+                    document.getElementById('soilTempStatus').textContent = soilTempStat.text;
+                    document.getElementById('soilTempStatus').className = `metric-status ${soilTempStat.class}`;
+                    document.getElementById('lightStatus').textContent = lightStat.text;
+                    document.getElementById('lightStatus').className = `metric-status ${lightStat.class}`;
+
+                    // Update System Info
+                    document.getElementById('rssiValue').textContent = `${c.rssi || '--'} dBm`;
+                    const sigQuality = getSignalQuality(c.rssi);
+                    const sigQualityEl = document.getElementById('signalQuality');
+                    sigQualityEl.textContent = sigQuality.text;
+                    sigQualityEl.style.color = sigQuality.color;
+
+                    document.getElementById('soilRaw').textContent = c.soilRaw || '--';
+                    document.getElementById('lightRaw').textContent = c.lightRaw || '--';
+                    document.getElementById('uptime').textContent = c.uptime ? formatUptime(c.uptime) : '--';
+                    document.getElementById('lastReading').textContent = c.timestamp || '--';
+
+                    document.getElementById('lastUpdateBadge').innerHTML = `<span class="status-dot"></span> Last Update: ${new Date().toLocaleTimeString()}`;
+                    document.getElementById('datapointsBadge').textContent = `📊 Data Points: ${h.length}`;
+
+                    // Update Gauges
+                    gaugeHum.data.datasets[0].data = [Math.round(c.airHum), 100 - Math.round(c.airHum)];
+                    gaugeHum.update();
+                    document.getElementById('gaugeHumValue').textContent = Math.round(c.airHum);
+
+                    gaugeMoist.data.datasets[0].data = [Math.round(c.soilMoist), 100 - Math.round(c.soilMoist)];
+                    gaugeMoist.update();
+                    document.getElementById('gaugeMoistValue').textContent = Math.round(c.soilMoist);
+
+                    // Light Gauge Logic (Cap visual gauge at 2000 Lux)
+                    const lightVal = c.light || 0;
+                    const lightMax = 2000;
+                    const lightDisplay = Math.min(lightVal, lightMax);
+                    gaugeLight.data.datasets[0].data = [lightDisplay, lightMax - lightDisplay];
+                    gaugeLight.update();
+                    document.getElementById('gaugeLightValue').textContent = Math.round(lightVal);
+
+                    // Update Charts
+                    if (h.length > 0) {
+                        const timestamps = h.map(d => d.timestamp ? d.timestamp.substring(0, 5) : '');
+
+                        tempChart.data.labels = timestamps;
+                        tempChart.data.datasets[0].data = h.map(d => d.airTemp);
+                        tempChart.data.datasets[1].data = h.map(d => d.soilTemp);
+                        tempChart.update();
+
+                        moistChart.data.labels = timestamps;
+                        moistChart.data.datasets[0].data = h.map(d => d.soilMoist);
+                        moistChart.data.datasets[1].data = h.map(d => d.airHum);
+                        moistChart.update();
+
+                        heatIndexChart.data.labels = timestamps;
+                        heatIndexChart.data.datasets[0].data = h.map(d => d.heatIndex);
+                        heatIndexChart.data.datasets[1].data = h.map(d => d.airTemp);
+                        heatIndexChart.update();
+
+                        lightChart.data.labels = timestamps;
+                        // Use at least 1 for log scale to avoid errors if light is 0
+                        lightChart.data.datasets[0].data = h.map(d => Math.max(d.light, 1));
+                        lightChart.update();
+
+                        // Update Radar & Polar (Normalize Light to 0-100 scale for viz)
+                        // Assuming 1000 Lux = 100 on the chart (Scale down by 10)
+                        const normLight = Math.min((c.light / 10), 100);
+
+                        const normData = [
+                            Math.min((c.airTemp / 50) * 100, 100),
+                            c.airHum || 0,
+                            c.soilMoist || 0,
+                            Math.min((c.soilTemp / 50) * 100, 100),
+                            normLight,
+                            Math.min((c.heatIndex / 50) * 100, 100)
+                        ];
+
+                        radarChart.data.datasets[0].data = normData;
+                        radarChart.update();
+
+                        polarChart.data.datasets[0].data = [
+                            c.airTemp || 0,
+                            c.airHum || 0,
+                            c.soilMoist || 0,
+                            c.soilTemp || 0,
+                            normLight // Use normalized light here too
+                        ];
+                        polarChart.update();
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('statusBadge').innerHTML = '<span class="status-dot"></span> Connection Error';
+                document.getElementById('statusBadge').className = 'status-badge';
+                document.getElementById('statusBadge').style.background = 'rgba(239, 68, 68, 0.15)';
+                document.getElementById('statusBadge').style.color = '#ef4444';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            fetchData();
+            setInterval(fetchData, 2000);
+        });
+    </script>
+</body>
+
+</html>
