@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My Redemptions - Telhan Sathi{% endblock %}
+{% block title %}मेरे मोचन - Telhan Sathi{% endblock %}
 
 {% block content %}
 <style>
@@ -264,29 +264,29 @@
     <div class="stats-section">
         <div class="stat-card">
             <div class="stat-icon">🪙</div>
-            <div class="stat-label">Total Coins Spent</div>
+            <div class="stat-label">कुल सिक्के खर्च किए गए</div>
             <div class="stat-value" id="totalSpent">0</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">✅</div>
-            <div class="stat-label">Active Redemptions</div>
+            <div class="stat-label">सक्रिय मोचन</div>
             <div class="stat-value" id="activeCount">0</div>
         </div>
     </div>
 
     <!-- Filter Tabs -->
     <div class="filter-tabs">
-        <div class="filter-tab active" data-status="all" onclick="filterRedemptions('all')">All</div>
-        <div class="filter-tab" data-status="active" onclick="filterRedemptions('active')">Active</div>
-        <div class="filter-tab" data-status="used" onclick="filterRedemptions('used')">Used</div>
-        <div class="filter-tab" data-status="expired" onclick="filterRedemptions('expired')">Expired</div>
+        <div class="filter-tab active" data-status="all" onclick="filterRedemptions('all')">सभी</div>
+        <div class="filter-tab" data-status="active" onclick="filterRedemptions('active')">सक्रिय</div>
+        <div class="filter-tab" data-status="used" onclick="filterRedemptions('used')">उपयोग किया गया</div>
+        <div class="filter-tab" data-status="expired" onclick="filterRedemptions('expired')">समाप्त</div>
     </div>
 
     <!-- Redemptions List -->
     <div id="redemptions-list">
         <div class="loading">
             <div class="spinner"></div>
-            Loading your redemptions...
+            आपके मोचन लोड हो रहे हैं...
         </div>
     </div>
 </div>
@@ -326,10 +326,10 @@ async function loadRedemptions(status) {
             document.getElementById('redemptions-list').innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">🎁</div>
-                    <div class="empty-title">No Redemptions Yet</div>
-                    <div class="empty-text">Start earning coins and redeem amazing offers!</div>
+                    <div class="empty-title">अभी तक कोई मोचन नहीं</div>
+                    <div class="empty-text">सिक्के अर्जित करना शुरू करें और अद्भुत ऑफर मोचित करें!</div>
                     <button class="empty-btn" onclick="window.location.href='/redemption/store'">
-                        Browse Store
+                        स्टोर ब्राउज़ करें
                     </button>
                 </div>
             `;
@@ -347,25 +347,25 @@ async function loadRedemptions(status) {
                         <div class="redemption-icon">🎁</div>
                         <div class="redemption-title">${redemption.offer_title}</div>
                         <div class="status-badge status-${redemption.status}">
-                            ${redemption.status}
+                            ${redemption.status === 'active' ? 'सक्रिय' : redemption.status === 'used' ? 'उपयोग किया गया' : redemption.status === 'expired' ? 'समाप्त' : redemption.status}
                         </div>
                     </div>
                     <div class="redemption-card-content">
                         <div class="redemption-detail">
-                            <span class="redemption-label">Redeemed Date</span>
+                            <span class="redemption-label">मोचन की तारीख</span>
                             <span class="redemption-value">${formatDate(redeemedAt)}</span>
                         </div>
                         <div class="redemption-detail">
-                            <span class="redemption-label">Expires</span>
+                            <span class="redemption-label">समाप्त होता है</span>
                             <span class="redemption-value">${formatDate(expiresAt)}</span>
                         </div>
                         <div class="redemption-detail">
-                            <span class="redemption-label">Coins Spent</span>
+                            <span class="redemption-label">सिक्के खर्च किए गए</span>
                             <span class="redemption-value">🪙 ${redemption.coins_spent}</span>
                         </div>
                         <div class="redemption-code-section">
                             <span class="redemption-code">${redemption.redemption_code}</span>
-                            <button class="copy-btn" onclick="copyToClipboard('${redemption.redemption_code}')">📋 Copy</button>
+                            <button class="copy-btn" onclick="copyToClipboard('${redemption.redemption_code}')">📋 कॉपी करें</button>
                         </div>
                     </div>
                 </div>
@@ -375,7 +375,7 @@ async function loadRedemptions(status) {
         document.getElementById('redemptions-list').innerHTML = html;
     } catch (err) {
         console.error('Error loading redemptions:', err);
-        document.getElementById('redemptions-list').innerHTML = '<div class="empty-state"><p>Error loading redemptions</p></div>';
+        document.getElementById('redemptions-list').innerHTML = '<div class="empty-state"><p>मोचन लोड करने में त्रुटि</p></div>';
     }
 }
 
@@ -424,14 +424,14 @@ async function updateStats() {
 
 function formatDate(date) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(date).toLocaleDateString('en-IN', options);
+    return new Date(date).toLocaleDateString('hi-IN', options);
 }
 
 function copyToClipboard(code) {
     navigator.clipboard.writeText(code).then(() => {
-        alert('Code copied to clipboard: ' + code);
+        alert('कोड क्लिपबोर्ड में कॉपी किया गया: ' + code);
     }).catch(err => {
-        alert('Failed to copy: ' + err);
+        alert('कॉपी करने में विफल: ' + err);
     });
 }
 </script>

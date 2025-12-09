@@ -372,27 +372,105 @@ class DeviceRequest(db.Model):
     """Records farmer requests for an IoT kit installation."""
     __tablename__ = 'device_requests'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(50), default='pending')  # pending, approved, rejected, scheduled
-    notes = db.Column(db.Text)
-
+    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), nullable=False, index=True)
+    
+    # Request Details
+    status = db.Column(db.String(50), default='pending')  # pending, approved, rejected, scheduled, installed
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high
+    
+    # Request Information
+    land_area_hectares = db.Column(db.Float)  # Area to be monitored
+    field_location = db.Column(db.String(255))  # GPS or description
+    preferred_installation_date = db.Column(db.Date)
+    
+    # Notes and Comments
+    farmer_notes = db.Column(db.Text)  # What farmer wants
+    admin_notes = db.Column(db.Text)  # Internal notes
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    scheduled_date = db.Column(db.DateTime)  # When installation is scheduled
+    completed_date = db.Column(db.DateTime)  # When installation was completed
+    
+    # Device Assignment
+    assigned_device_id = db.Column(db.String(36), db.ForeignKey('iot_devices.id'))
+    
     def __repr__(self):
-        return f'<DeviceRequest {self.id} for Farmer {self.farmer_id}>'
+        return f'<DeviceRequest {self.id} farmer:{self.farmer_id} status:{self.status}>'
+    
+    def to_dict(self):
+        """Convert request to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'farmer_id': self.farmer_id,
+            'status': self.status,
+            'priority': self.priority,
+            'land_area_hectares': self.land_area_hectares,
+            'field_location': self.field_location,
+            'preferred_installation_date': self.preferred_installation_date.isoformat() if self.preferred_installation_date else None,
+            'farmer_notes': self.farmer_notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'scheduled_date': self.scheduled_date.isoformat() if self.scheduled_date else None,
+            'completed_date': self.completed_date.isoformat() if self.completed_date else None
+        }
 
 
 class IoTDevice(db.Model):
     """Represents an installed IoT kit (ESP32 + sensors) for a farmer."""
     __tablename__ = 'iot_devices'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), nullable=False)
-    device_serial = db.Column(db.String(100), unique=True)
+    farmer_id = db.Column(db.String(36), db.ForeignKey('farmers.id'), nullable=False, index=True)
+    
+    # Device Identification
+    device_serial = db.Column(db.String(100), unique=True, index=True)
+    device_mac = db.Column(db.String(20), unique=True)  # MAC address for device tracking
+    device_name = db.Column(db.String(100))  # User-friendly device name
+    
+    # Installation Status
     installed = db.Column(db.Boolean, default=False)
     installed_at = db.Column(db.DateTime)
-    location_description = db.Column(db.String(255))
-
+    location_description = db.Column(db.String(255))  # e.g., "North Field, near well"
+    
+    # Device Status
+    is_active = db.Column(db.Boolean, default=True)
+    last_seen = db.Column(db.DateTime)  # Last time device sent data
+    
+    # Device Configuration
+    wifi_ssid = db.Column(db.String(100))  # Connected WiFi network
+    firmware_version = db.Column(db.String(50))  # ESP32 firmware version
+    
+    # Calibration Data
+    soil_dry_value = db.Column(db.Integer)  # Raw ADC value for dry soil (for calibration)
+    soil_wet_value = db.Column(db.Integer)  # Raw ADC value for wet soil (for calibration)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    readings = db.relationship('SensorReading', backref='device', lazy=True, cascade='all, delete-orphan')
+    
     def __repr__(self):
         return f'<IoTDevice {self.device_serial} farmer:{self.farmer_id}>'
+    
+    def to_dict(self):
+        """Convert device to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'farmer_id': self.farmer_id,
+            'device_serial': self.device_serial,
+            'device_mac': self.device_mac,
+            'device_name': self.device_name,
+            'installed': self.installed,
+            'installed_at': self.installed_at.isoformat() if self.installed_at else None,
+            'location_description': self.location_description,
+            'is_active': self.is_active,
+            'last_seen': self.last_seen.isoformat() if self.last_seen else None,
+            'wifi_ssid': self.wifi_ssid,
+            'firmware_version': self.firmware_version,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class SensorReading(db.Model):
@@ -400,15 +478,48 @@ class SensorReading(db.Model):
     __tablename__ = 'sensor_readings'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     device_id = db.Column(db.String(36), db.ForeignKey('iot_devices.id'), nullable=False)
-    temperature = db.Column(db.Float)  # ambient
-    humidity = db.Column(db.Float)
-    soil_moisture = db.Column(db.Float)
-    light = db.Column(db.Float)
-    probe_temp = db.Column(db.Float)
-    received_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Temperature & Humidity (DHT22)
+    temperature = db.Column(db.Float)  # ambient air temperature (°C)
+    humidity = db.Column(db.Float)  # air humidity (%)
+    heat_index = db.Column(db.Float)  # heat index/feel-like temperature (°C)
+    
+    # Soil Sensors
+    soil_moisture = db.Column(db.Float)  # soil moisture (%)
+    soil_raw = db.Column(db.Integer)  # raw ADC value for soil sensor (0-4095)
+    soil_temp = db.Column(db.Float)  # soil temperature from DS18B20 (°C)
+    
+    # Light Sensor (LDR)
+    light = db.Column(db.Float)  # light intensity in lux
+    light_raw = db.Column(db.Integer)  # raw ADC value for light sensor (0-4095)
+    
+    # Signal Strength
+    rssi = db.Column(db.Integer)  # WiFi RSSI (signal strength in dBm)
+    
+    # Device Uptime
+    uptime = db.Column(db.Integer)  # device uptime in seconds
+    
+    # Timestamp
+    received_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def __repr__(self):
         return f'<SensorReading {self.id} device:{self.device_id} at {self.received_at}>'
+    
+    def to_dict(self):
+        """Convert reading to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'device_id': self.device_id,
+            'temperature': self.temperature,
+            'humidity': self.humidity,
+            'soil_moisture': self.soil_moisture,
+            'soil_temp': self.soil_temp,
+            'light': self.light,
+            'light_raw': self.light_raw,
+            'rssi': self.rssi,
+            'uptime': self.uptime,
+            'received_at': self.received_at.isoformat() if self.received_at else None
+        }
 
 
 # ===== GAMIFICATION & REDEMPTION MODELS =====

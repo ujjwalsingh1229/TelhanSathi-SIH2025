@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subsidy Details</title>
+    <title>सब्सिडी विवरण</title>
     <style>
         body {
             font-family: sans-serif;
@@ -232,7 +232,7 @@
                 <svg class="icon-button" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
                 </svg>
-                <div class="header-title">Back</div>
+                <div class="header-title">वापस</div>
             </div>
         </header>
 
@@ -240,51 +240,51 @@
         <div class="main-content">
             <!-- Subsidy Header -->
             <div class="subsidy-header">
-                <div class="subsidy-title" id="subsidy-name">Loading...</div>
-                <div class="subsidy-focus-tag" id="subsidy-focus">Subsidy</div>
-                <div class="subsidy-amount" id="subsidy-amount">Benefit Details</div>
-                <div class="subsidy-eligibility" id="subsidy-eligibility">Eligibility: Loading...</div>
+                <div class="subsidy-title" id="subsidy-name">लोड हो रहा है...</div>
+                <div class="subsidy-focus-tag" id="subsidy-focus">सब्सिडी</div>
+                <div class="subsidy-amount" id="subsidy-amount">लाभ विवरण</div>
+                <div class="subsidy-eligibility" id="subsidy-eligibility">पात्रता: लोड हो रहा है...</div>
             </div>
 
             <!-- Overview Section -->
             <div class="detail-section">
-                <div class="section-title">Overview</div>
-                <div class="section-text" id="subsidy-description">Description loading...</div>
+                <div class="section-title">अवलोकन</div>
+                <div class="section-text" id="subsidy-description">विवरण लोड हो रहा है...</div>
             </div>
 
             <!-- Key Info Section -->
             <div class="detail-section">
-                <div class="section-title">Key Information</div>
+                <div class="section-title">मुख्य जानकारी</div>
                 <div class="info-grid">
                     <div class="info-box">
-                        <div class="info-box-label">Scheme Type</div>
-                        <div class="info-box-value" id="scheme-type">Subsidy</div>
+                        <div class="info-box-label">योजना प्रकार</div>
+                        <div class="info-box-value" id="scheme-type">सब्सिडी</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-box-label">Eligibility</div>
-                        <div class="info-box-value" id="eligibility-status">All Farmers</div>
+                        <div class="info-box-label">पात्रता</div>
+                        <div class="info-box-value" id="eligibility-status">सभी किसान</div>
                     </div>
                 </div>
             </div>
 
             <!-- How to Apply Section -->
             <div class="detail-section">
-                <div class="section-title">How to Apply</div>
+                <div class="section-title">आवेदन कैसे करें</div>
                 <ol class="how-to-apply" id="how-to-apply-list">
-                    <li>Loading steps...</li>
+                    <li>चरण लोड हो रहे हैं...</li>
                 </ol>
                 <div class="requirements">
-                    <div class="requirements-title">Documents Required:</div>
+                    <div class="requirements-title">आवश्यक दस्तावेज़:</div>
                     <ul id="documents-list">
-                        <li>Land ownership proof</li>
-                        <li>Aadhar Card</li>
-                        <li>Bank Account details</li>
+                        <li>भूमि स्वामित्व का सबूत</li>
+                        <li>आधार कार्ड</li>
+                        <li>बैंक खाता विवरण</li>
                     </ul>
                 </div>
             </div>
 
             <!-- Apply Button -->
-            <a href="#" target="_blank" id="apply-link" class="apply-btn">Apply Now (External Link)</a>
+            <a href="#" target="_blank" id="apply-link" class="apply-btn">अभी आवेदन करें (बाहरी लिंक)</a>
         </div>
     </div>
 
@@ -322,7 +322,7 @@
                             stepsList.appendChild(li);
                         });
                     } else {
-                        stepsList.innerHTML = '<li>No application steps available.</li>';
+                        stepsList.innerHTML = '<li>कोई आवेदन चरण उपलब्ध नहीं है।</li>';
                     }
 
                     // Populate Documents Required
@@ -335,12 +335,12 @@
                             docsList.appendChild(li);
                         });
                     } else {
-                        docsList.innerHTML = '<li>No specific documents listed.</li>';
+                        docsList.innerHTML = '<li>कोई विशिष्ट दस्तावेज़ सूचीबद्ध नहीं है।</li>';
                     }
                 })
                 .catch(error => {
                     console.error('Error loading subsidy:', error);
-                    document.querySelector('.main-content').innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Subsidy not found or error loading details.</div>';
+                    document.querySelector('.main-content').innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">सब्सिडी नहीं मिली या विवरण लोड करने में त्रुटि।</div>';
                 });
         });
 

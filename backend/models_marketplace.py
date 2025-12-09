@@ -257,22 +257,33 @@ class Auction(db.Model):
     
     def to_dict(self):
         """Convert to dictionary for JSON response"""
+        bids_list = self.bids if self.bids else []
         return {
             'id': self.id,
             'crop_name': self.crop_name,
             'quantity': self.quantity_quintal,
             'base_price': self.base_price,
             'min_bid': self.min_bid_price,
+            'min_bid_price': self.min_bid_price,
             'current_bid': self.current_highest_bid,
+            'current_highest_bid': self.current_highest_bid,
             'time_left': self.get_time_remaining(),
             'status': self.status,
-            'bidders_count': len(self.bids) if self.bids else 0,
+            'bids_count': len(bids_list),
+            'bidders_count': len(set(bid.buyer_id for bid in bids_list)) if bids_list else 0,
+            'avg_bid': round(sum(bid.bid_amount for bid in bids_list) / len(bids_list), 2) if bids_list else 0,
             'winning_buyer': self.winning_buyer_id,
             'final_price': self.final_price,
             'location': self.location,
+            'description': self.description,
             'photo1': self.photo1_path,
+            'photo1_path': self.photo1_path,
+            'photo2_path': self.photo2_path,
+            'photo3_path': self.photo3_path,
             'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'seller_id': self.seller_id
         }
     
     def get_time_remaining(self):

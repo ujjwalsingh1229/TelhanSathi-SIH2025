@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Redemption Store - Telhan Sathi{% endblock %}
+{% block title %}मोचन स्टोर - Telhan Sathi{% endblock %}
 
 {% block content %}
 <style>
@@ -465,30 +465,30 @@
             <span class="coin-icon">🪙</span>
             <span class="coins-amount" id="total-coins">0</span>
         </div>
-        <div class="coins-label">Available Coins to Redeem</div>
+        <div class="coins-label">मोचन के लिए उपलब्ध सिक्के</div>
     </div>
 
     <!-- Navigation Bar -->
     <div class="store-nav">
-        <div class="nav-title">🎁 Redemption Store</div>
-        <a href="{{ url_for('redemption.my_redemptions') }}" class="nav-link">📋 My Redemptions</a>
+        <div class="nav-title">🎁 मोचन स्टोर</div>
+        <a href="{{ url_for('redemption.my_redemptions') }}" class="nav-link">📋 मेरे मोचन</a>
     </div>
 
     <!-- Filter Tabs -->
     <div class="filter-tabs">
-        <div class="filter-tab active" data-category="all" onclick="filterOffers('all')">All Offers</div>
-        <div class="filter-tab" data-category="Farm Inputs" onclick="filterOffers('Farm Inputs')">🌱 Farm Inputs</div>
-        <div class="filter-tab" data-category="Services" onclick="filterOffers('Services')">👨‍🌾 Services</div>
-        <div class="filter-tab" data-category="Yantra Sathi" onclick="filterOffers('Yantra Sathi')">🚜 Yantra Sathi</div>
-        <div class="filter-tab" data-category="Technology" onclick="filterOffers('Technology')">📡 Technology</div>
-        <div class="filter-tab" data-category="VIP" onclick="filterOffers('VIP')">⭐ VIP</div>
+        <div class="filter-tab active" data-category="all" onclick="filterOffers('all')">सभी ऑफर</div>
+        <div class="filter-tab" data-category="Farm Inputs" onclick="filterOffers('Farm Inputs')">🌱 कृषि निवेश</div>
+        <div class="filter-tab" data-category="Services" onclick="filterOffers('Services')">👨‍🌾 सेवाएं</div>
+        <div class="filter-tab" data-category="Yantra Sathi" onclick="filterOffers('Yantra Sathi')">🚜 यंत्र साथी</div>
+        <div class="filter-tab" data-category="Technology" onclick="filterOffers('Technology')">📡 तकनीक</div>
+        <div class="filter-tab" data-category="VIP" onclick="filterOffers('VIP')">⭐ वीआईपी</div>
     </div>
 
     <!-- Offers Grid -->
     <div class="offers-grid" id="offers-grid">
         <div class="loading">
             <div class="spinner"></div>
-            Loading offers...
+            ऑफर लोड हो रहे हैं...
         </div>
     </div>
 </div>
@@ -499,7 +499,7 @@
         <div class="modal-header">
             <div class="modal-title">
                 <span class="modal-title-icon" id="modalOfferIcon">🎁</span>
-                <span id="modalOfferTitle">Offer</span>
+                <span id="modalOfferTitle">ऑफर</span>
             </div>
             <button class="modal-close" onclick="closeOfferModal()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -512,33 +512,33 @@
         <div class="modal-content">
             <!-- Success Message (shown after redemption) -->
             <div class="success-message" id="successMessage" style="display: none;">
-                <h4>✅ Redeemed Successfully!</h4>
-                <p>Your offer has been redeemed. Save your code to use it.</p>
+                <h4>✅ सफलतापूर्वक मोचित किया गया!</h4>
+                <p>आपका ऑफर मोचित किया जा चुका है। इसका उपयोग करने के लिए अपना कोड सहेजें।</p>
                 <div class="redemption-code" id="redemptionCode">TS00000000</div>
             </div>
 
             <!-- Offer Details -->
             <div class="modal-section" id="offerDetails">
-                <div class="modal-section-title">About This Offer</div>
+                <div class="modal-section-title">इस ऑफर के बारे में</div>
                 <div class="modal-detail">
-                    <div class="modal-detail-label">Description</div>
-                    <div class="modal-detail-value" id="modalOfferDescription">Description</div>
+                    <div class="modal-detail-label">विवरण</div>
+                    <div class="modal-detail-value" id="modalOfferDescription">विवरण</div>
                 </div>
                 <div class="modal-detail">
-                    <div class="modal-detail-label">Actual Value</div>
-                    <div class="modal-detail-value" id="modalOfferValue">Free</div>
+                    <div class="modal-detail-label">वास्तविक मूल्य</div>
+                    <div class="modal-detail-value" id="modalOfferValue">मुफ्त</div>
                 </div>
                 <div class="modal-detail">
-                    <div class="modal-detail-label">Validity</div>
-                    <div class="modal-detail-value" id="modalOfferValidity">90 Days</div>
+                    <div class="modal-detail-label">वैधता</div>
+                    <div class="modal-detail-value" id="modalOfferValidity">90 दिन</div>
                 </div>
             </div>
 
             <!-- Coin Cost -->
             <div class="modal-section">
-                <div class="modal-section-title">Cost</div>
+                <div class="modal-section-title">लागत</div>
                 <div class="modal-detail">
-                    <div class="modal-detail-label">Coins Required</div>
+                    <div class="modal-detail-label">आवश्यक सिक्के</div>
                     <div class="modal-detail-value" id="modalOfferCost">
                         <span class="coin-badge">
                             <span class="coin-badge-icon">🪙</span>
@@ -550,19 +550,19 @@
 
             <!-- How to Use -->
             <div class="modal-section">
-                <div class="modal-section-title">How to Use</div>
+                <div class="modal-section-title">कैसे उपयोग करें</div>
                 <p style="font-size: 12px; color: #666; line-height: 1.5; margin: 0;">
-                    1. Click "Redeem Now" to confirm redemption<br>
-                    2. You'll receive a redemption code<br>
-                    3. Share this code with the vendor or use in-app<br>
-                    4. Valid for 90 days from redemption date
+                    1. मोचन की पुष्टि करने के लिए "अभी मोचन करें" पर क्लिक करें<br>
+                    2. आपको एक मोचन कोड प्राप्त होगा<br>
+                    3. यह कोड विक्रेता के साथ साझा करें या ऐप में उपयोग करें<br>
+                    4. मोचन की तारीख से 90 दिन के लिए वैध
                 </p>
             </div>
         </div>
 
         <div class="modal-footer">
-            <button class="modal-btn modal-btn-secondary" onclick="closeOfferModal()">Close</button>
-            <button class="modal-btn modal-btn-primary" id="redeemBtn" onclick="redeemOffer()">Redeem Now</button>
+            <button class="modal-btn modal-btn-secondary" onclick="closeOfferModal()">बंद करें</button>
+            <button class="modal-btn modal-btn-primary" id="redeemBtn" onclick="redeemOffer()">अभी मोचन करें</button>
         </div>
     </div>
 </div>
@@ -621,7 +621,7 @@ async function loadOffers(category) {
         console.log('Offers:', data.offers);
 
         if (data.offers.length === 0) {
-            document.getElementById('offers-grid').innerHTML = '<div class="empty-state"><div class="empty-icon">🎁</div><p>No offers available in this category</p></div>';
+            document.getElementById('offers-grid').innerHTML = '<div class="empty-state"><div class="empty-icon">🎁</div><p>इस श्रेणी में कोई ऑफर उपलब्ध नहीं है</p></div>';
             return;
         }
 
@@ -646,7 +646,7 @@ async function loadOffers(category) {
                             <span>${offer.coin_cost}</span>
                         </div>
                         <button class="redeem-btn-small" ${!canRedeem ? 'disabled' : ''} onclick="event.stopPropagation(); showOfferDetails('${offer.id}')">
-                            ${canRedeem ? 'Redeem' : 'Need Coins'}
+                            ${canRedeem ? 'मोचन करें' : 'सिक्कों की आवश्यकता'}
                         </button>
                     </div>
                 </div>
@@ -656,7 +656,7 @@ async function loadOffers(category) {
         document.getElementById('offers-grid').innerHTML = html;
     } catch (err) {
         console.error('Error loading offers:', err);
-        document.getElementById('offers-grid').innerHTML = '<div class="empty-state"><p>Error loading offers</p></div>';
+        document.getElementById('offers-grid').innerHTML = '<div class="empty-state"><p>ऑफर लोड करने में त्रुटि</p></div>';
     }
 }
 
@@ -698,13 +698,13 @@ function showOfferDetails(offerId) {
                             document.getElementById('modalOfferTitle').textContent = offer.title;
                             document.getElementById('modalOfferDescription').textContent = offer.description;
                             document.getElementById('modalOfferValue').textContent = offer.actual_value;
-                            document.getElementById('modalOfferValidity').textContent = offer.validity_days + ' Days';
+                            document.getElementById('modalOfferValidity').textContent = offer.validity_days + ' दिन';
                             document.getElementById('modalCoinCost').textContent = offer.coin_cost;
                             
                             // Hide success message on open
                             document.getElementById('successMessage').style.display = 'none';
                             document.getElementById('offerDetails').style.display = 'block';
-                            document.getElementById('redeemBtn').textContent = 'Redeem Now';
+                            document.getElementById('redeemBtn').textContent = 'अभी मोचन करें';
                             document.getElementById('redeemBtn').disabled = false;
 
                             // Open modal
@@ -728,7 +728,7 @@ async function redeemOffer() {
 
     const redeemBtn = document.getElementById('redeemBtn');
     redeemBtn.disabled = true;
-    redeemBtn.textContent = 'Redeeming...';
+    redeemBtn.textContent = 'मोचन किया जा रहा है...';
 
     try {
         const resp = await fetch('/redemption/api/redeem', {
@@ -748,9 +748,9 @@ async function redeemOffer() {
         const data = await resp.json();
 
         if (!resp.ok) {
-            alert(data.error || 'Redemption failed');
+            alert(data.error || 'मोचन विफल');
             redeemBtn.disabled = false;
-            redeemBtn.textContent = 'Redeem Now';
+            redeemBtn.textContent = 'अभी मोचन करें';
             return;
         }
 
@@ -759,7 +759,7 @@ async function redeemOffer() {
         document.getElementById('successMessage').style.display = 'block';
         document.getElementById('redemptionCode').textContent = data.redemption_code;
         
-        redeemBtn.textContent = 'Close';
+        redeemBtn.textContent = 'बंद करें';
         redeemBtn.onclick = closeOfferModal;
 
         // Refresh coin balance
@@ -767,9 +767,9 @@ async function redeemOffer() {
         await loadOffers(currentCategory);
 
     } catch (err) {
-        alert('Error: ' + err.message);
+        alert('त्रुटि: ' + err.message);
         redeemBtn.disabled = false;
-        redeemBtn.textContent = 'Redeem Now';
+        redeemBtn.textContent = 'अभी मोचन करें';
     }
 }
 </script>

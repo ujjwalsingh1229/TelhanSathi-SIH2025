@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Subsidies and Schemes{% endblock %}
+{% block title %}सब्सिडी और योजनाएं{% endblock %}
 {% block style %}
     <style>
        
@@ -45,6 +45,7 @@
             margin: 0 15px 15px;
             border-bottom: 1px solid #e0e0e0;
             gap: 5px;
+            overflow-x: auto;
         }
 
         .filter-button {
@@ -162,6 +163,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .subsidy-name {
@@ -173,7 +176,7 @@
         .subsidy-focus {
             font-size: 11px;
             color: #fff;
-            background-color: #2196f3; /* Blue for focus tag */
+            background-color: #2196f3;
             padding: 3px 8px;
             border-radius: 5px;
             font-weight: 500;
@@ -216,15 +219,15 @@
 
         
         <div class="page-info">
-            <div class="page-main-title">Schemes and Subsidy</div>
-            <div class="page-description">Explore government schemes and find the best financial aid for your farm.</div>
+            <div class="page-main-title">योजनाएं और सब्सिडी</div>
+            <div class="page-description">सरकारी योजनाएं खोजें और अपने खेत के लिए सर्वोत्तम वित्तीय सहायता प्राप्त करें।</div>
         </div>
 
         <!-- 2. FILTER TABS -->
         <div class="filter-tabs">
-            <div class="filter-button" id="filter-recommended">✨ Subsidi Recommender</div>
-            <div class="filter-button active" id="filter-subsidies">📋 AllSubsidies</div>
-            <div class="filter-button" id="filter-schemes">🎯 AllSchemes</div>
+            <div class="filter-button" id="filter-recommended">✨ अनुशंसा</div>
+            <div class="filter-button active" id="filter-subsidies">📋 सभी सब्सिडी</div>
+            <div class="filter-button" id="filter-schemes">🎯 सभी योजनाएं</div>
             
         </div>
 
@@ -300,12 +303,12 @@
             }
 
             // --- Show Loader ---
-            function showLoader(message = "Analyzing best schemes for you...") {
+            function showLoader(message = "आपके लिए सर्वोत्तम योजनाएं विश्लेषण कर रहे हैं...") {
                 listContainer.innerHTML = `
                     <div class="loader-container">
                         <div class="spinner"></div>
                         <div class="loader-text">${message}</div>
-                        <div class="loader-subtext">This may take a few seconds...</div>
+                        <div class="loader-subtext">यह कुछ सेकंड ले सकता है...</div>
                     </div>
                 `;
             }
@@ -315,11 +318,11 @@
                 listContainer.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; text-align: center;">
                         <div style="font-size: 48px; margin-bottom: 15px;">🔍</div>
-                        <div style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px;">Get Your Personalized Schemes</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px;">अपनी व्यक्तिगत योजनाएं प्राप्त करें</div>
                         <div style="font-size: 13px; color: #666; margin-bottom: 20px; max-width: 300px;">
-                            Click "Analyze" to get AI-powered recommendations based on your farm profile, location, and eligibility.
+                            कृत्रिम बुद्धिमत्ता द्वारा संचालित सिफारिशें प्राप्त करने के लिए "विश्लेषण करें" पर क्लिक करें।
                         </div>
-                        <button class="analyze-btn" id="analyze-btn">🤖 Analyze & Recommend</button>
+                        <button class="analyze-btn" id="analyze-btn">🤖 विश्लेषण करें और अनुशंसा दें</button>
                     </div>
                 `;
                 
@@ -331,7 +334,7 @@
                 if (isAnalyzing) return;
                 isAnalyzing = true;
                 
-                showLoader("🤖 Analyzing your farm profile...");
+                showLoader("🤖 आपकी खेत प्रोफाइल का विश्लेषण कर रहे हैं...");
                 
                 try {
                     const response = await fetch('/subsidies/api/smart-recommendations', {
@@ -346,14 +349,14 @@
                             smartRecommendations = data.recommended_schemes;
                             renderSmartRecommendations(smartRecommendations);
                         } else {
-                            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e53935;">Failed to generate recommendations. Please try again.</div>';
+                            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e53935;">सिफारिशें उत्पन्न करने में विफल। कृपया पुनः प्रयास करें।</div>';
                         }
                     } else {
-                        listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e53935;">Error generating recommendations. Please try again.</div>';
+                        listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e53935;">सिफारिशें उत्पन्न करने में त्रुटि। कृपया पुनः प्रयास करें।</div>';
                     }
                 } catch (error) {
                     console.error('Error analyzing recommendations:', error);
-                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e53935;">Network error. Please try again.</div>';
+                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e53935;">नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।</div>';
                 } finally {
                     isAnalyzing = false;
                 }
@@ -363,7 +366,7 @@
             function renderCards(dataToRender) {
                 listContainer.innerHTML = '';
                 if (dataToRender.length === 0) {
-                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No items found.</div>';
+                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">कोई आइटम नहीं मिला।</div>';
                     return;
                 }
                 dataToRender.forEach(subsidy => {
@@ -374,9 +377,9 @@
                             <div class="subsidy-name">${subsidy.name}</div>
                             <div class="subsidy-focus" style="background-color: ${subsidy.focus_color};">${subsidy.focus_area}</div>
                         </div>
-                        <div class="subsidy-details-row"><strong>Benefit:</strong> ${subsidy.benefit_amount}</div>
-                        <div class="subsidy-details-row"><strong>Eligibility:</strong> ${subsidy.eligibility_criteria}</div>
-                        <button class="view-details-btn">View Details</button>
+                        <div class="subsidy-details-row"><strong>लाभ:</strong> ${subsidy.benefit_amount}</div>
+                        <div class="subsidy-details-row"><strong>पात्रता:</strong> ${subsidy.eligibility_criteria}</div>
+                        <button class="view-details-btn">विवरण देखें</button>
                     `;
                     card.addEventListener('click', () => {
                         window.location.href = `/subsidies/detail/${subsidy.id}`;
@@ -389,14 +392,14 @@
             function renderSmartRecommendations(smartRecs) {
                 listContainer.innerHTML = '';
                 if (smartRecs.length === 0) {
-                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No recommendations available.</div>';
+                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">कोई अनुशंसा उपलब्ध नहीं है।</div>';
                     return;
                 }
                 smartRecs.forEach(rec => {
                     const card = document.createElement('div');
                     card.className = 'subsidy-card';
                     const priorityColor = rec.priority === 'high' ? '#ff6f00' : rec.priority === 'medium' ? '#fbc02d' : '#9e9e9e';
-                    const priorityLabel = rec.priority === 'high' ? '🔴 High Priority' : rec.priority === 'medium' ? '🟡 Medium Priority' : '⚪ Low Priority';
+                    const priorityLabel = rec.priority === 'high' ? '🔴 उच्च प्राथमिकता' : rec.priority === 'medium' ? '🟡 मध्यम प्राथमिकता' : '⚪ कम प्राथमिकता';
                     
                     card.innerHTML = `
                         <div class="card-header-row">
@@ -405,12 +408,12 @@
                         </div>
                         <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
                             <span style="background: ${priorityColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${priorityLabel}</span>
-                            <span style="background: #4caf50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">🤖 Match: ${rec.match_percentage}%</span>
+                            <span style="background: #4caf50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">🤖 मेल: ${rec.match_percentage}%</span>
                         </div>
-                        <div class="subsidy-details-row"><strong>Why for you:</strong> ${rec.reason}</div>
-                        <div class="subsidy-details-row"><strong>Benefit:</strong> ${rec.benefit_amount || rec.scheme_name}</div>
-                        <div class="subsidy-details-row"><strong>Eligibility:</strong> ${rec.eligibility_criteria || rec.description}</div>
-                        <button class="view-details-btn">View Details</button>
+                        <div class="subsidy-details-row"><strong>आपके लिए क्यों:</strong> ${rec.reason}</div>
+                        <div class="subsidy-details-row"><strong>लाभ:</strong> ${rec.benefit_amount || rec.scheme_name}</div>
+                        <div class="subsidy-details-row"><strong>पात्रता:</strong> ${rec.eligibility_criteria || rec.description}</div>
+                        <button class="view-details-btn">विवरण देखें</button>
                     `;
                     card.addEventListener('click', () => {
                         const schemeId = rec.scheme_id || rec.id;

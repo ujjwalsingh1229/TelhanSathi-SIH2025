@@ -104,6 +104,35 @@ def save_auction_photos(files):
     return paths
 
 
+@bidding_bp.route('/debug/current-user', methods=['GET'])
+def debug_current_user():
+    """Debug endpoint to show current logged-in farmer"""
+    farmer_id = session.get('farmer_id_verified')
+    buyer_id = session.get('buyer_id_verified')
+    
+    if farmer_id:
+        farmer = Farmer.query.get(farmer_id)
+        farmer_auctions = Auction.query.filter_by(seller_id=farmer_id).count()
+        return jsonify({
+            'user_type': 'farmer',
+            'user_id': farmer_id,
+            'phone': farmer.phone_number if hasattr(farmer, 'phone_number') else 'N/A',
+            'auctions_created': farmer_auctions
+        }), 200
+    elif buyer_id:
+        buyer = Buyer.query.get(buyer_id)
+        return jsonify({
+            'user_type': 'buyer',
+            'user_id': buyer_id,
+            'phone': buyer.phone_number if hasattr(buyer, 'phone_number') else 'N/A'
+        }), 200
+    else:
+        return jsonify({
+            'user_type': 'none',
+            'message': 'Not logged in'
+        }), 401
+
+
 # ==================== FARMER ROUTES ====================
 
 @bidding_bp.route('/farmer/create-auction', methods=['POST'])
@@ -114,28 +143,63 @@ def create_auction():
     
     try:
         # Parse form data
-        crop_name = request.form.get('crop_name')
-        quantity = float(request.form.get('quantity', 0))
-        min_bid_price = float(request.form.get('min_bid_price', 0))
-        duration_hours = int(request.form.get('duration_hours', 24))
-        location = request.form.get('location', '')
-        description = request.form.get('description', '')
+        crop_name = request.form.get('crop_name', '').strip()
+        quantity_str = request.form.get('quantity', '0')
+        min_bid_price_str = request.form.get('min_bid_price', '0')
+        duration_hours_str = request.form.get('duration_hours', '24')
+        location = request.form.get('location', '').strip()
+        description = request.form.get('description', '').strip()
         
-        # Validation
-        if not crop_name or quantity <= 0 or min_bid_price <= 0:
-            return jsonify({'error': 'Invalid input parameters'}), 400
+        # Validate required fields
+        if not crop_name:
+            return jsonify({'error': 'Crop name is required'}), 400
+        if not location:
+            return jsonify({'error': 'Location is required'}), 400
+        if not duration_hours_str:
+            return jsonify({'error': 'Duration is required'}), 400
+            
+        # Parse numeric values
+        try:
+            quantity = float(quantity_str)
+            min_bid_price = float(min_bid_price_str)
+            duration_hours = int(duration_hours_str)
+        except ValueError as e:
+            return jsonify({'error': f'Invalid numeric input: {str(e)}'}), 400
+        
+        # Validate numeric ranges
+        if quantity <= 0:
+            return jsonify({'error': 'Quantity must be greater than 0'}), 400
+        if min_bid_price <= 0:
+            return jsonify({'error': 'Minimum bid price must be greater than 0'}), 400
+        if duration_hours <= 0:
+            return jsonify({'error': 'Duration must be greater than 0'}), 400
         
         # Get base price from mandi
         base_price = get_base_price(crop_name)
         
-        # Handle photo uploads
-        photo_paths = []
-        if 'photos' in request.files:
-            photos = request.files.getlist('photos')
-            photo_paths = save_auction_photos(photos)
+        # Handle photo uploads - look for photo1, photo2, photo3
+        photo_paths = [None, None, None]
+        for i in range(1, 4):
+            photo_field = f'photo{i}'
+            if photo_field in request.files:
+                file = request.files[photo_field]
+                if file and file.filename and allowed_file(file.filename):
+                    try:
+                        filename = secure_filename(file.filename)
+                        unique_filename = f"{uuid.uuid4()}_{filename}"
+                        filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+                        file.save(filepath)
+                        photo_paths[i-1] = filepath
+                    except Exception as e:
+                        print(f"Error saving photo {i}: {str(e)}")
+        
+        # At least one photo is required
+        if not photo_paths[0]:
+            return jsonify({'error': 'At least one photo is required'}), 400
         
         # Create auction
         auction = Auction(
+            id=str(uuid.uuid4()),
             seller_id=farmer_id,
             crop_name=crop_name,
             quantity_quintal=quantity,
@@ -144,13 +208,18 @@ def create_auction():
             end_time=datetime.utcnow() + timedelta(hours=duration_hours),
             location=location,
             description=description,
-            photo1_path=photo_paths[0] if len(photo_paths) > 0 else None,
-            photo2_path=photo_paths[1] if len(photo_paths) > 1 else None,
-            photo3_path=photo_paths[2] if len(photo_paths) > 2 else None,
+            status='live',
+            photo1_path=photo_paths[0],
+            photo2_path=photo_paths[1],
+            photo3_path=photo_paths[2],
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
         
         db.session.add(auction)
         db.session.commit()
+        
+        print(f"✅ Auction created: ID={auction.id}, Crop={crop_name}, Quantity={quantity}")
         
         return jsonify({
             'success': True,
@@ -160,9 +229,12 @@ def create_auction():
         }), 201
         
     except ValueError as e:
+        db.session.rollback()
+        print(f"ValueError in create_auction: {str(e)}")
         return jsonify({'error': f'Invalid input: {str(e)}'}), 400
     except Exception as e:
         db.session.rollback()
+        print(f"Exception in create_auction: {str(e)}")
         return jsonify({'error': f'Error creating auction: {str(e)}'}), 500
 
 
@@ -195,6 +267,30 @@ def farmer_auctions():
             'status': status_filter,
             'sort': sort_by
         }
+    }), 200
+
+
+@bidding_bp.route('/farmer/auctions/with-bids', methods=['GET'])
+@farmer_login_required
+def farmer_auctions_with_bids():
+    """Get farmer's auctions that have received bids"""
+    farmer_id = session['farmer_id_verified']
+    
+    # Get farmer's auctions that have bids
+    auctions = Auction.query.filter_by(seller_id=farmer_id).all()
+    
+    # Filter only those with bids
+    auctions_with_bids = []
+    for auction in auctions:
+        bid_count = Bid.query.filter_by(auction_id=auction.id).count()
+        if bid_count > 0:
+            auction_dict = auction.to_dict()
+            auction_dict['has_bids'] = True
+            auctions_with_bids.append(auction_dict)
+    
+    return jsonify({
+        'auctions': auctions_with_bids,
+        'total': len(auctions_with_bids)
     }), 200
 
 
@@ -688,4 +784,483 @@ def buyer_won_auctions_page():
     transactions = Transaction.query.filter(Transaction.auction_id.in_(transaction_ids)).all() if transaction_ids else []
     
     return render_template('won_auctions.html', auctions=won_auctions, transactions=transactions)
+
+
+# ==================== FARMER-SIDE BIDDING LOGIC ====================
+
+@bidding_bp.route('/farmer/auction/<auction_id>/bids', methods=['GET'])
+@farmer_login_required
+def farmer_auction_bids(auction_id):
+    """Get all bids for farmer's auction with detailed analytics"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    # Get all bids for this auction
+    bids = Bid.query.filter_by(auction_id=auction_id).order_by(Bid.bid_amount.desc()).all()
+    
+    # Calculate analytics
+    bid_analytics = {
+        'total_bids': len(bids),
+        'unique_bidders': len(set(bid.buyer_id for bid in bids)),
+        'highest_bid': max([bid.bid_amount for bid in bids]) if bids else 0,
+        'lowest_bid': min([bid.bid_amount for bid in bids]) if bids else 0,
+        'average_bid': round(sum([bid.bid_amount for bid in bids]) / len(bids), 2) if bids else 0,
+        'winning_bid': auction.current_highest_bid or 0,
+        'meets_minimum': auction.current_highest_bid >= auction.min_bid_price if auction.current_highest_bid else False
+    }
+    
+    return jsonify({
+        'auction_id': auction_id,
+        'crop_name': auction.crop_name,
+        'quantity': auction.quantity_quintal,
+        'min_bid_price': auction.min_bid_price,
+        'bids': [
+            {
+                'bid_id': bid.id,
+                'buyer_id': bid.buyer_id,
+                'bid_amount': bid.bid_amount,
+                'bid_time': bid.created_at.isoformat(),
+                'is_winning': bid.is_winning,
+                'auto_bid': getattr(bid, 'auto_bid_max', None)
+            }
+            for bid in bids
+        ],
+        'analytics': bid_analytics,
+        'status': auction.status,
+        'auction_end_time': auction.end_time.isoformat()
+    }), 200
+
+
+@bidding_bp.route('/farmer/auction/<auction_id>/accept-bid', methods=['POST'])
+@farmer_login_required
+def farmer_accept_bid(auction_id):
+    """Farmer accepts a specific bid (if auto-accept not enabled)"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    try:
+        data = request.get_json()
+        bid_id = data.get('bid_id')
+        
+        bid = Bid.query.get(bid_id)
+        if not bid:
+            return jsonify({'error': 'Bid not found'}), 404
+        
+        if bid.auction_id != auction_id:
+            return jsonify({'error': 'Bid does not belong to this auction'}), 400
+        
+        # Check if bid meets minimum
+        if bid.bid_amount < auction.min_bid_price:
+            return jsonify({'error': f'Bid amount (₹{bid.bid_amount}) is below minimum (₹{auction.min_bid_price})'}), 400
+        
+        # Accept the bid
+        bid.is_winning = True
+        auction.status = 'sold'
+        auction.final_price = bid.bid_amount
+        auction.winning_buyer_id = bid.buyer_id
+        auction.current_highest_bid = bid.bid_amount
+        
+        # Create transaction
+        transaction = Transaction(
+            id=str(uuid.uuid4()),
+            auction_id=auction_id,
+            seller_id=farmer_id,
+            buyer_id=bid.buyer_id,
+            crop_name=auction.crop_name,
+            quantity=auction.quantity_quintal,
+            final_price=bid.bid_amount,
+            total_amount=auction.quantity_quintal * bid.bid_amount,
+            status='pending'
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Bid accepted for ₹{bid.bid_amount}',
+            'transaction_id': transaction.id,
+            'auction_status': auction.status
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bidding_bp.route('/farmer/auction/<auction_id>/reject-bid', methods=['POST'])
+@farmer_login_required
+def farmer_reject_bid(auction_id):
+    """Farmer rejects a specific bid"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    try:
+        data = request.get_json()
+        bid_id = data.get('bid_id')
+        reason = data.get('reason', 'No reason provided')
+        
+        bid = Bid.query.get(bid_id)
+        if not bid:
+            return jsonify({'error': 'Bid not found'}), 404
+        
+        if bid.auction_id != auction_id:
+            return jsonify({'error': 'Bid does not belong to this auction'}), 400
+        
+        # Mark bid as rejected
+        bid.is_winning = False
+        bid.status = 'rejected'
+        
+        # Store rejection reason
+        if hasattr(bid, 'rejection_reason'):
+            bid.rejection_reason = reason
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Bid rejected for ₹{bid.bid_amount}',
+            'bid_id': bid_id
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bidding_bp.route('/farmer/auction/<auction_id>/counter-offer', methods=['POST'])
+@farmer_login_required
+def farmer_counter_offer(auction_id):
+    """Farmer sends counter offer to a buyer"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    try:
+        data = request.get_json()
+        buyer_id = data.get('buyer_id')
+        counter_price = float(data.get('counter_price', 0))
+        message = data.get('message', '')
+        
+        if counter_price <= 0:
+            return jsonify({'error': 'Counter price must be greater than 0'}), 400
+        
+        buyer = Buyer.query.get(buyer_id)
+        if not buyer:
+            return jsonify({'error': 'Buyer not found'}), 404
+        
+        # Create counter offer notification
+        notification = AuctionNotification(
+            id=str(uuid.uuid4()),
+            user_id=buyer_id,
+            auction_id=auction_id,
+            notification_type='counter_offer',
+            message=f'Counter offer received: ₹{counter_price} for {auction.crop_name}',
+            is_read=False,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(notification)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Counter offer sent to {buyer.buyer_name}',
+            'counter_price': counter_price,
+            'notification_id': notification.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bidding_bp.route('/farmer/auction/<auction_id>/extend', methods=['POST'])
+@farmer_login_required
+def farmer_extend_auction(auction_id):
+    """Farmer extends auction duration"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    if auction.status != 'live':
+        return jsonify({'error': 'Can only extend live auctions'}), 400
+    
+    try:
+        data = request.get_json()
+        extend_hours = int(data.get('extend_hours', 12))
+        
+        if extend_hours <= 0 or extend_hours > 72:
+            return jsonify({'error': 'Extension must be between 1 and 72 hours'}), 400
+        
+        # Extend auction
+        old_end_time = auction.end_time
+        auction.end_time = auction.end_time + timedelta(hours=extend_hours)
+        
+        # Notify bidders
+        bids = Bid.query.filter_by(auction_id=auction_id).distinct(Bid.buyer_id).all()
+        for bid in bids:
+            notification = AuctionNotification(
+                id=str(uuid.uuid4()),
+                user_id=bid.buyer_id,
+                auction_id=auction_id,
+                notification_type='auction_extended',
+                message=f'Auction extended by {extend_hours} hours. New end time: {auction.end_time.strftime("%Y-%m-%d %H:%M")}',
+                is_read=False,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Auction extended by {extend_hours} hours',
+            'old_end_time': old_end_time.isoformat(),
+            'new_end_time': auction.end_time.isoformat()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bidding_bp.route('/farmer/auction/<auction_id>/update-minimum', methods=['POST'])
+@farmer_login_required
+def farmer_update_minimum_bid(auction_id):
+    """Farmer updates minimum bid price (before any bids)"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    # Check if auction has any bids
+    bid_count = Bid.query.filter_by(auction_id=auction_id).count()
+    if bid_count > 0:
+        return jsonify({'error': 'Cannot update minimum bid after bids have been placed'}), 400
+    
+    try:
+        data = request.get_json()
+        new_minimum = float(data.get('new_minimum', 0))
+        
+        if new_minimum <= 0:
+            return jsonify({'error': 'Minimum bid must be greater than 0'}), 400
+        
+        old_minimum = auction.min_bid_price
+        auction.min_bid_price = new_minimum
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Minimum bid updated from ₹{old_minimum} to ₹{new_minimum}',
+            'old_minimum': old_minimum,
+            'new_minimum': new_minimum
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bidding_bp.route('/farmer/auction/<auction_id>/cancel', methods=['POST'])
+@farmer_login_required
+def farmer_cancel_auction(auction_id):
+    """Farmer cancels auction and notifies all bidders"""
+    farmer_id = session['farmer_id_verified']
+    
+    auction = Auction.query.get(auction_id)
+    if not auction:
+        return jsonify({'error': 'Auction not found'}), 404
+    
+    if auction.seller_id != farmer_id:
+        return jsonify({'error': 'Not your auction'}), 403
+    
+    if auction.status != 'live':
+        return jsonify({'error': 'Can only cancel live auctions'}), 400
+    
+    try:
+        reason = request.get_json().get('reason', 'No reason provided') if request.is_json else 'No reason provided'
+        
+        # Cancel auction
+        auction.status = 'cancelled'
+        
+        # Notify all bidders
+        bids = Bid.query.filter_by(auction_id=auction_id).all()
+        unique_bidders = set(bid.buyer_id for bid in bids)
+        
+        for buyer_id in unique_bidders:
+            notification = AuctionNotification(
+                id=str(uuid.uuid4()),
+                user_id=buyer_id,
+                auction_id=auction_id,
+                notification_type='auction_cancelled',
+                message=f'Auction for {auction.crop_name} has been cancelled. Reason: {reason}',
+                is_read=False,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Auction cancelled. Notified {len(unique_bidders)} bidders',
+            'auction_status': auction.status
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bidding_bp.route('/farmer/auctions/active', methods=['GET'])
+@farmer_login_required
+def farmer_active_auctions():
+    """Get farmer's active (live) auctions with real-time stats"""
+    farmer_id = session['farmer_id_verified']
+    
+    # Get live auctions that haven't ended yet
+    auctions = Auction.query.filter_by(
+        seller_id=farmer_id,
+        status='live'
+    ).filter(Auction.end_time > datetime.utcnow()).all()
+    
+    auctions_data = []
+    for auction in auctions:
+        bids = Bid.query.filter_by(auction_id=auction.id).all()
+        
+        auction_info = {
+            'auction_id': auction.id,
+            'crop_name': auction.crop_name,
+            'quantity': auction.quantity_quintal,
+            'min_bid_price': auction.min_bid_price,
+            'current_highest_bid': auction.current_highest_bid or 0,
+            'total_bids': len(bids),
+            'unique_bidders': len(set(bid.buyer_id for bid in bids)),
+            'meets_minimum': (auction.current_highest_bid >= auction.min_bid_price) if auction.current_highest_bid else False,
+            'time_remaining': (auction.end_time - datetime.utcnow()).total_seconds(),
+            'end_time': auction.end_time.isoformat(),
+            'created_at': auction.created_at.isoformat()
+        }
+        auctions_data.append(auction_info)
+    
+    return jsonify({
+        'total_active': len(auctions_data),
+        'auctions': auctions_data
+    }), 200
+
+
+@bidding_bp.route('/farmer/auctions/closed', methods=['GET'])
+@farmer_login_required
+def farmer_closed_auctions():
+    """Get farmer's closed/ended auctions"""
+    farmer_id = session['farmer_id_verified']
+    
+    # Get closed auctions (sold, ended, or cancelled)
+    auctions = Auction.query.filter_by(seller_id=farmer_id).filter(
+        Auction.status.in_(['sold', 'ended', 'cancelled'])
+    ).order_by(Auction.end_time.desc()).all()
+    
+    auctions_data = []
+    for auction in auctions:
+        bids = Bid.query.filter_by(auction_id=auction.id).all()
+        winning_bid = Bid.query.filter_by(auction_id=auction.id, is_winning=True).first()
+        
+        auction_info = {
+            'auction_id': auction.id,
+            'crop_name': auction.crop_name,
+            'quantity': auction.quantity_quintal,
+            'min_bid_price': auction.min_bid_price,
+            'final_price': auction.final_price,
+            'status': auction.status,
+            'total_bids': len(bids),
+            'winning_buyer_id': auction.winning_buyer_id,
+            'winning_bid_amount': winning_bid.bid_amount if winning_bid else None,
+            'end_time': auction.end_time.isoformat(),
+            'created_at': auction.created_at.isoformat()
+        }
+        auctions_data.append(auction_info)
+    
+    return jsonify({
+        'total_closed': len(auctions_data),
+        'auctions': auctions_data
+    }), 200
+
+
+@bidding_bp.route('/farmer/dashboard/stats', methods=['GET'])
+@farmer_login_required
+def farmer_dashboard_stats():
+    """Get farmer's bidding dashboard statistics"""
+    farmer_id = session['farmer_id_verified']
+    
+    # Count auctions by status
+    total_auctions = Auction.query.filter_by(seller_id=farmer_id).count()
+    active_auctions = Auction.query.filter_by(
+        seller_id=farmer_id,
+        status='live'
+    ).filter(Auction.end_time > datetime.utcnow()).count()
+    sold_auctions = Auction.query.filter_by(seller_id=farmer_id, status='sold').count()
+    ended_auctions = Auction.query.filter_by(seller_id=farmer_id, status='ended').count()
+    cancelled_auctions = Auction.query.filter_by(seller_id=farmer_id, status='cancelled').count()
+    
+    # Get total bids and total value
+    farmer_auctions = Auction.query.filter_by(seller_id=farmer_id).all()
+    auction_ids = [a.id for a in farmer_auctions]
+    total_bids = Bid.query.filter(Bid.auction_id.in_(auction_ids)).count() if auction_ids else 0
+    
+    # Calculate total trading value
+    transactions = Transaction.query.filter_by(seller_id=farmer_id).all()
+    total_value = sum(t.total_amount for t in transactions) if transactions else 0
+    
+    # Get average bid price
+    all_bids = Bid.query.filter(Bid.auction_id.in_(auction_ids)).all() if auction_ids else []
+    avg_bid_price = round(sum(b.bid_amount for b in all_bids) / len(all_bids), 2) if all_bids else 0
+    
+    return jsonify({
+        'auction_stats': {
+            'total': total_auctions,
+            'active': active_auctions,
+            'sold': sold_auctions,
+            'ended': ended_auctions,
+            'cancelled': cancelled_auctions
+        },
+        'bid_stats': {
+            'total_bids': total_bids,
+            'average_bid_price': avg_bid_price
+        },
+        'financial_stats': {
+            'total_trading_value': round(total_value, 2),
+            'completed_transactions': len(transactions)
+        }
+    }), 200
 

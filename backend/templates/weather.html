@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Weather Forecast - Telhan Sathi{% endblock %}
+{% block title %}मौसम पूर्वानुमान - Telhan Sathi{% endblock %}
 
 {% block content %}
         <!-- Header -->
         
-                <div class="header-title">Weather Forecast</div>
+                <div class="header-title">मौसम पूर्वानुमान</div>
 
 
         <!-- Main Content -->
         <div class="main-content">
             <!-- Location Card -->
             <div class="card">
-                <h3 class="card-title">7-Day Forecast</h3>
-                <div id="locationLine" class="location-text">Loading…</div>
+                <h3 class="card-title">7 दिन का पूर्वानुमान</h3>
+                <div id="locationLine" class="location-text">लोड हो रहा है…</div>
             </div>
 
             <!-- Forecast Grid -->
@@ -21,7 +21,7 @@
                 <div class="forecast-grid" id="forecastGrid">
                     <div style="text-align: center; padding: 40px 20px; width: 100%;">
                         <div class="spinner"></div>
-                        <p style="margin-top: 15px; color: #666;">Loading weather data...</p>
+                        <p style="margin-top: 15px; color: #666;">मौसम का डेटा लोड हो रहा है...</p>
                     </div>
                 </div>
             </div>
@@ -197,7 +197,7 @@
                 const j = await res.json();
                 
                 // Update location
-                document.getElementById('locationLine').textContent = '📍 Location: ' + (j.location || 'Your Area');
+                document.getElementById('locationLine').textContent = '📍 स्थान: ' + (j.location || 'आपका क्षेत्र');
                 
                 // Render forecast grid
                 const grid = document.getElementById('forecastGrid');
@@ -207,7 +207,7 @@
                     grid.innerHTML = `
                         <div class="empty-state" style="width: 100%;">
                             <div class="empty-icon">🌤️</div>
-                            <div class="empty-text">No forecast data available</div>
+                            <div class="empty-text">कोई पूर्वानुमान डेटा उपलब्ध नहीं है</div>
                         </div>
                     `;
                     return;
@@ -215,7 +215,7 @@
                 
                 for (const d of j.forecast) {
                     const dateObj = new Date(d.date);
-                    const dateStr = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: '2-digit' });
+                    const dateStr = dateObj.toLocaleDateString('hi-IN', { weekday: 'short', month: 'short', day: '2-digit' });
                     
                     const el = document.createElement('div');
                     el.className = 'day';
@@ -225,27 +225,27 @@
                             ${getWeatherEmoji(d.summary)} ${d.summary}
                         </div>
                         <div class="day-metric">
-                            <span class="metric-label">🌡️ Temp:</span>
+                            <span class="metric-label">🌡️ तापमान:</span>
                             <span class="metric-value">${d.temp_min}°-${d.temp_max}°C</span>
                         </div>
                         <div class="day-metric">
-                            <span class="metric-label">🌧️ Rain:</span>
-                            <span class="metric-value">${d.precip_mm} mm</span>
+                            <span class="metric-label">🌧️ बारिश:</span>
+                            <span class="metric-value">${d.precip_mm} मिमी</span>
                         </div>
                         <div class="day-metric">
-                            <span class="metric-label">💨 Wind:</span>
-                            <span class="metric-value">${d.wind_kmh} km/h</span>
+                            <span class="metric-label">💨 हवा:</span>
+                            <span class="metric-value">${d.wind_kmh} किमी/घंटा</span>
                         </div>
                     `;
                     grid.appendChild(el);
                 }
             } catch (error) {
                 console.error('Error loading forecast:', error);
-                document.getElementById('locationLine').textContent = '⚠️ Could not load forecast data';
+                document.getElementById('locationLine').textContent = '⚠️ पूर्वानुमान डेटा लोड नहीं कर सके';
                 document.getElementById('forecastGrid').innerHTML = `
                     <div class="empty-state" style="width: 100%;">
                         <div class="empty-icon">❌</div>
-                        <div class="empty-text">Failed to load weather forecast. Please try again.</div>
+                        <div class="empty-text">मौसम पूर्वानुमान लोड करने में विफल। कृपया फिर से प्रयास करें।</div>
                     </div>
                 `;
             }

@@ -45,7 +45,7 @@ def buyer_login_post():
         return render_template('buyer_login.html', error='Invalid password')
     
     # Set session
-    session['buyer_id'] = buyer.id
+    session['buyer_id_verified'] = buyer.id
     session['buyer_email'] = buyer.email
     session['buyer_name'] = buyer.buyer_name
     
@@ -104,7 +104,7 @@ def buyer_register_post():
         db.session.commit()
         
         # Set session
-        session['buyer_id'] = buyer.id
+        session['buyer_id_verified'] = buyer.id
         session['buyer_email'] = buyer.email
         session['buyer_name'] = buyer.buyer_name
         
@@ -129,10 +129,10 @@ def buyer_logout():
 @buyer_auth_bp.route('/dashboard')
 def buyer_dashboard():
     """Render buyer dashboard"""
-    if 'buyer_id' not in session:
+    if 'buyer_id_verified' not in session:
         return redirect(url_for('buyer_auth.buyer_login'))
     
-    buyer = Buyer.query.filter_by(id=session.get('buyer_id')).first()
+    buyer = Buyer.query.filter_by(id=session.get('buyer_id_verified')).first()
     if not buyer:
         session.clear()
         return redirect(url_for('buyer_auth.buyer_login'))
@@ -143,10 +143,10 @@ def buyer_dashboard():
 @buyer_auth_bp.route('/api/profile')
 def buyer_profile():
     """Get buyer profile as JSON"""
-    if 'buyer_id' not in session:
+    if 'buyer_id_verified' not in session:
         return jsonify({'error': 'Not logged in'}), 401
     
-    buyer = Buyer.query.filter_by(id=session.get('buyer_id')).first()
+    buyer = Buyer.query.filter_by(id=session.get('buyer_id_verified')).first()
     if not buyer:
         return jsonify({'error': 'Buyer not found'}), 404
     
@@ -167,10 +167,10 @@ def buyer_profile():
 @buyer_auth_bp.route('/api/my-offers')
 def buyer_my_offers():
     """Get buyer's own offers (buyer-created independent offers)"""
-    if 'buyer_id' not in session:
+    if 'buyer_id_verified' not in session:
         return jsonify({'error': 'Not logged in'}), 401
     
-    buyer_id = session.get('buyer_id')
+    buyer_id = session.get('buyer_id_verified')
     
     # Import here to avoid circular imports
     from models_marketplace import BuyerOffer
@@ -203,11 +203,11 @@ def buyer_my_offers():
 @buyer_auth_bp.route('/api/create-offer', methods=['POST'])
 def create_offer():
     """Create a new independent buyer offer (not linked to farmer's listing)"""
-    if 'buyer_id' not in session:
+    if 'buyer_id_verified' not in session:
         return jsonify({'error': 'Not logged in'}), 401
     
     try:
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         buyer_email = session.get('buyer_email')
         buyer_name = session.get('buyer_name')
         
@@ -336,12 +336,12 @@ def marketplace_offers():
 @buyer_auth_bp.route('/api/offers/<offer_id>', methods=['DELETE'])
 def delete_offer(offer_id):
     """Delete a buyer offer"""
-    if 'buyer_id' not in session:
+    if 'buyer_id_verified' not in session:
         return jsonify({'error': 'Not logged in'}), 401
     
     from models_marketplace import BuyerOffer
     
-    buyer_id = session.get('buyer_id')
+    buyer_id = session.get('buyer_id_verified')
     offer = BuyerOffer.query.filter_by(id=offer_id, buyer_id=buyer_id).first()
     
     if not offer:
@@ -359,13 +359,13 @@ def delete_offer(offer_id):
 @buyer_auth_bp.route('/api/offers/<offer_id>', methods=['PUT'])
 def update_offer(offer_id):
     """Update a buyer offer"""
-    if 'buyer_id' not in session:
+    if 'buyer_id_verified' not in session:
         return jsonify({'error': 'Not logged in'}), 401
     
     from models_marketplace import BuyerOffer
     
     try:
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         offer = BuyerOffer.query.filter_by(id=offer_id, buyer_id=buyer_id).first()
         
         if not offer:
@@ -408,7 +408,7 @@ def get_sell_requests():
     """Get sell requests that match buyer's offer crops"""
     try:
         # Check if buyer is logged in
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         if not buyer_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -462,7 +462,7 @@ def get_sell_requests():
 def get_buyer_chats():
     """Get all chats initiated by buyer"""
     try:
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         if not buyer_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -499,7 +499,7 @@ def get_buyer_chats():
 def create_chat():
     """Create or get existing chat with farmer"""
     try:
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         if not buyer_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -542,7 +542,7 @@ def create_chat():
 def get_chat_messages(chat_id):
     """Get all messages in a chat"""
     try:
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         if not buyer_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -574,7 +574,7 @@ def get_chat_messages(chat_id):
 def send_chat_message(chat_id):
     """Send a message in chat"""
     try:
-        buyer_id = session.get('buyer_id')
+        buyer_id = session.get('buyer_id_verified')
         buyer_name = session.get('buyer_name')
         if not buyer_id:
             return jsonify({'error': 'Unauthorized'}), 401

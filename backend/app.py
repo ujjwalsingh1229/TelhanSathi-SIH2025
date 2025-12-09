@@ -40,7 +40,11 @@ from routes.admin import admin_bp
 from routes.notifications import notifications_bp
 from routes.crop_economics import crop_economics_bp
 from routes.profit_simulator import profit_bp
-from routes.field_monitoring import fm_bp
+from routes.field_monitoring import iot
+app.register_blueprint(iot)
+
+
+
 from routes.weather import weather_bp
 from routes.redemption_store import redemption_bp
 from routes.buyer_auth import buyer_auth_bp
@@ -57,12 +61,23 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(notifications_bp)
 app.register_blueprint(crop_economics_bp)   
 app.register_blueprint(profit_bp)
-app.register_blueprint(fm_bp)
+
+
 app.register_blueprint(weather_bp)
 app.register_blueprint(redemption_bp)
 app.register_blueprint(buyer_auth_bp)
 app.register_blueprint(translation_bp)
 app.register_blueprint(bidding_bp)
+
+# ----------------------- ROOT-LEVEL ESP32 ENDPOINTS -----------------------
+# Import the handler function from field_monitoring
+from routes.field_monitoring import handle_esp32_update
+
+@app.route("/api/update", methods=["POST"])
+@app.route("/api/push", methods=["POST"])
+def root_esp32_update():
+    """Root-level endpoints for ESP32 compatibility (bypasses blueprint prefix)"""
+    return handle_esp32_update(request.json)
 
 # ----------------------- ROUTES -----------------------
 

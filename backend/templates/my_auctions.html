@@ -12,7 +12,7 @@
     <div class="page-header-action">
         <div class="page-header">
             <h1>🌾 My Auctions</h1>
-            <p class="subtitle">Manage your auction listings</p>
+            <p class="subtitle">Manage your auction listings and track bids</p>
         </div>
         <a href="/bidding/create-auction" class="btn-primary">+ Create New Auction</a>
     </div>
@@ -24,6 +24,7 @@
         <button class="tab-btn" onclick="switchTab('ended')">Ended</button>
         <button class="tab-btn" onclick="switchTab('sold')">Sold</button>
         <button class="tab-btn" onclick="switchTab('cancelled')">Cancelled</button>
+        <button class="tab-btn" onclick="switchTab('bidded')">With Bids 🎯</button>
     </div>
 
     <!-- Statistics Cards -->
@@ -180,23 +181,49 @@
         setupAutoRefresh();
     });
 
+    let allAuctions = [];
+    let biddedAuctions = [];
+
     // Load farmer's auctions
     function loadMyAuctions() {
-        fetch('/bidding/farmer/my-auctions')
-            .then(res => res.json())
-            .then(data => {
-                allAuctions = data.auctions || [];
-                
-                // Update statistics
-                updateStatistics(allAuctions);
-                
-                // Display all auctions
-                switchTab('all');
+        // Load farmer's created auctions
+        Promise.all([
+            fetch('/bidding/farmer/my-auctions').then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                return res.json();
+            }),
+            fetch('/bidding/farmer/auctions/with-bids').then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                return res.json();
+            }).catch(err => {
+                console.log('Bidded auctions endpoint not available yet, continuing...');
+                return { auctions: [] };
             })
-            .catch(err => {
-                console.error('Error loading auctions:', err);
-                showError('Failed to load your auctions');
-            });
+        ])
+        .then(([auctionsData, biddedData]) => {
+            console.log('Loaded auctions:', auctionsData);
+            console.log('Loaded bidded auctions:', biddedData);
+            
+            allAuctions = auctionsData.auctions || [];
+            biddedAuctions = biddedData.auctions || [];
+            
+            console.log(`Total created auctions: ${allAuctions.length}`);
+            console.log(`Total bidded auctions: ${biddedAuctions.length}`);
+            
+            // Mark bidded auctions with a flag
+            biddedAuctions.forEach(a => a.is_bidded = true);
+            
+            // Update statistics
+            updateStatistics(allAuctions);
+            
+            // Display all auctions
+            switchTab('all');
+        })
+        .catch(err => {
+            console.error('Error loading auctions:', err);
+            showError('Failed to load your auctions: ' + err.message);
+            document.getElementById('auctionsList').innerHTML = `<div style="grid-column: 1/-1; padding: 20px; color: red;">Error: ${err.message}</div>`;
+        });
     }
 
     // Switch tab
@@ -223,6 +250,21 @@
             case 'cancelled':
                 filteredAuctions = allAuctions.filter(a => a.status === 'cancelled');
                 break;
+            case 'bidded':
+                // Show only auctions with bids (bids_count > 0)
+                filteredAuctions = allAuctions.filter(a => a.bids_count > 0);
+                // Also add auctions from bidded list
+                if (biddedAuctions.length > 0) {
+                    filteredAuctions = [...filteredAuctions, ...biddedAuctions];
+                    // Remove duplicates
+                    const seen = new Set();
+                    filteredAuctions = filteredAuctions.filter(a => {
+                        if (seen.has(a.id)) return false;
+                        seen.add(a.id);
+                        return true;
+                    });
+                }
+                break;
         }
 
         displayAuctions(filteredAuctions);
@@ -241,61 +283,99 @@
 
         container.style.display = 'grid';
         noData.style.display = 'none';
-        container.innerHTML = auctions.map(auction => {
+        container.innerHTML = '';
+        
+        auctions.forEach(auction => {
             const template = document.getElementById('auctionCardTemplate').content.cloneNode(true);
             
             // Fill template
             const card = template.querySelector('.auction-card-detailed');
             card.dataset.auctionId = auction.id;
             
-            template.getElementById('cropName').textContent = auction.crop_name;
-            template.getElementById('quantity').textContent = `${auction.quantity} Q`;
-            template.getElementById('basePrice').textContent = `₹${formatNumber(auction.base_price)}/Q`;
-            template.getElementById('minBid').textContent = `₹${formatNumber(auction.min_bid)}`;
-            template.getElementById('currentBid').textContent = `₹${formatNumber(auction.current_highest_bid || auction.min_bid)}`;
-            template.getElementById('totalBids').textContent = auction.bids_count || 0;
-            template.getElementById('bidders').textContent = auction.bidders_count || 0;
-            template.getElementById('avgBid').textContent = `₹${formatNumber(auction.avg_bid || 0)}`;
-            template.getElementById('location').textContent = auction.location;
-            template.getElementById('startTime').textContent = formatTime(auction.start_time);
-            template.getElementById('endTime').textContent = getTimeRemaining(auction.end_time);
+            // Safe field access with fallbacks
+            const cropName = template.querySelector('#cropName');
+            if (cropName) cropName.textContent = auction.crop_name || 'Unknown';
+            
+            const quantity = template.querySelector('#quantity');
+            if (quantity) quantity.textContent = `${auction.quantity || 0} Q`;
+            
+            const basePrice = template.querySelector('#basePrice');
+            if (basePrice) basePrice.textContent = `₹${formatNumber(auction.base_price || 0)}/Q`;
+            
+            const minBid = template.querySelector('#minBid');
+            if (minBid) minBid.textContent = `₹${formatNumber(auction.min_bid || 0)}`;
+            
+            const currentBid = template.querySelector('#currentBid');
+            if (currentBid) currentBid.textContent = `₹${formatNumber(auction.current_bid || auction.min_bid || 0)}`;
+            
+            const totalBids = template.querySelector('#totalBids');
+            if (totalBids) totalBids.textContent = auction.bids_count || 0;
+            
+            const bidders = template.querySelector('#bidders');
+            if (bidders) bidders.textContent = auction.bidders_count || 0;
+            
+            const avgBid = template.querySelector('#avgBid');
+            if (avgBid) avgBid.textContent = `₹${formatNumber(auction.avg_bid || 0)}`;
+            
+            const location = template.querySelector('#location');
+            if (location) location.textContent = auction.location || 'N/A';
+            
+            const startTime = template.querySelector('#startTime');
+            if (startTime) startTime.textContent = formatTime(auction.start_time);
+            
+            const endTime = template.querySelector('#endTime');
+            if (endTime) endTime.textContent = getTimeRemaining(auction.end_time);
 
             // Status badge
-            const statusBadge = template.getElementById('statusBadge');
-            statusBadge.textContent = auction.status.toUpperCase();
-            statusBadge.className = `status-badge status-${auction.status}`;
+            const statusBadge = template.querySelector('#statusBadge');
+            if (statusBadge) {
+                let badgeText = (auction.status || 'UNKNOWN').toUpperCase();
+                
+                // Add bid indicator if auction has bids
+                if (auction.bids_count > 0) {
+                    badgeText += ` 🎯 (${auction.bids_count} bids)`;
+                }
+                
+                statusBadge.textContent = badgeText;
+                statusBadge.className = `status-badge status-${auction.status || 'unknown'}`;
+                
+                // Add special styling if has bids
+                if (auction.bids_count > 0) {
+                    statusBadge.style.backgroundColor = '#22c55e';
+                    statusBadge.style.color = '#ffffff';
+                }
+            }
 
             // Show/hide buttons based on status
+            const editBtn = template.querySelector('#editBtn');
+            const endBtn = template.querySelector('#endBtn');
+            
             if (auction.status === 'live') {
-                template.getElementById('endBtn').style.display = 'inline-block';
+                if (endBtn) endBtn.style.display = 'inline-block';
+                if (editBtn) editBtn.style.display = 'inline-block';
             } else {
-                template.getElementById('editBtn').style.display = 'none';
-                template.getElementById('endBtn').style.display = 'none';
+                if (editBtn) editBtn.style.display = 'none';
+                if (endBtn) endBtn.style.display = 'none';
             }
 
             // Event handlers
             const auctionId = auction.id;
-            template.getElementById('viewDetailsBtn').onclick = () => {
-                window.location.href = `/bidding/farmer/auction/${auctionId}`;
-            };
+            
+            const viewDetailsBtn = template.querySelector('[title="View Details"]');
+            if (viewDetailsBtn) {
+                viewDetailsBtn.onclick = () => {
+                    window.location.href = `/bidding/auction/${auctionId}/detail`;
+                };
+            }
 
-            const viewBtn = template.querySelector('[title="View Details"]');
-            viewBtn.onclick = () => {
-                window.location.href = `/bidding/farmer/auction/${auctionId}`;
-            };
-
-            const endBtn = template.querySelector('[title="End Auction"]');
             if (endBtn) {
                 endBtn.onclick = () => {
                     confirmEndAuction(auctionId);
                 };
             }
 
-            return template;
-        }).reduce((frag, node) => {
-            frag.appendChild(node);
-            return frag;
-        }, document.createDocumentFragment());
+            container.appendChild(template);
+        });
     }
 
     // Update statistics
