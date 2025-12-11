@@ -25,7 +25,7 @@
 | **Frontend**   | React Native (Mobile), React.js (Admin Dashboard)                |
 | **AI / ML**    | Scikit-Learn (Yield), Prophet (Price), TensorFlow Lite (Disease) |
 | **IoT**        | ESP32, DHT11, Soil Moisture Sensors, MQTT                        |
-| **Blockchain** | Hyperledger Fabric / Ethereum (Testnet)                          |
+| **Blockchain** | Custom Made Blockchain                                           |
 
 ---
 
@@ -119,3 +119,4 @@ TelhanSathi-SIH2025/
 ├── .gitignore
 └── README.md
 ```
+
