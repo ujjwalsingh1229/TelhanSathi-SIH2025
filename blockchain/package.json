@@ -1,0 +1,33 @@
+{
+    "name": "telhan-sathi-chain",
+    "version": "2.0.0",
+    "description": "Distributed Blockchain for SIH Agri-Market Linkage",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js",
+        "node1": "set NODE_ID=node1&& set PORT=3000&& set P2P_PORT=6001&& set ENABLE_DISTRIBUTED=true&& node app.js",
+        "node2": "set NODE_ID=node2&& set PORT=3001&& set P2P_PORT=6002&& set ENABLE_DISTRIBUTED=true&& set \"BOOTSTRAP_NODES=ws://localhost:6001,node1\"&& node app.js",
+        "node3": "set NODE_ID=node3&& set PORT=3002&& set P2P_PORT=6003&& set ENABLE_DISTRIBUTED=true&& set \"BOOTSTRAP_NODES=ws://localhost:6001,node1\"&& node app.js"
+    },
+    "dependencies": {
+        "axios": "^1.6.2",
+        "bcryptjs": "^3.0.3",
+        "body-parser": "^1.20.2",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^4.18.2",
+        "express-rate-limit": "^8.2.1",
+        "fast-json-stable-stringify": "^2.1.0",
+        "firebase-admin": "^13.6.0",
+        "helmet": "^8.1.0",
+        "joi": "^18.0.2",
+        "jsonwebtoken": "^9.0.3",
+        "ngrok": "^4.3.3",
+        "validator": "^13.15.23",
+        "ws": "^8.14.2"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    }
+}

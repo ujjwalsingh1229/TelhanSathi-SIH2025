@@ -1,0 +1,125 @@
+﻿CSS FILE STRUCTURE OVERVIEW
+===========================
+
+FILE: /static/css/bidding.css
+SIZE: 54KB
+LINES: 2,459
+
+SECTION BREAKDOWN:
+1. Root Variables & Theme (Lines 1-100)
+   - Color palette (primary, secondary, danger, warning, etc.)
+   - Shadow definitions (4 levels)
+   - Animation definitions (7 keyframes)
+
+2. Browse Auctions Page (Lines 100-500)
+   - Page container styling
+   - Header with gradient text
+   - Filter section with focus states
+   - Auction grid layout
+
+3. Auction Cards (Lines 500-750)
+   - Card containers with hover effects
+   - Image with gradient overlay
+   - Status badges with gradients
+   - Time remaining indicators with pulse animation
+
+4. Buttons & Actions (Lines 750-950)
+   - Primary buttons with ripple effect
+   - Secondary outline buttons
+   - Danger buttons
+   - Button states (hover, active, disabled)
+
+5. Badges & Labels (Lines 950-1050)
+   - 4 color-coded badge variants
+   - Styling for status indicators
+
+6. Form Elements (Lines 1050-1350)
+   - Form container styling
+   - Input fields with validation states
+   - Select dropdowns with custom arrows
+   - Textareas with proper sizing
+   - Form groups with labels
+   - Helper text and error messages
+   - Input addons for currency/units
+
+7. Modals & Dialogs (Lines 1350-1550)
+   - Modal container with backdrop blur
+   - Slide-up animation
+   - Header/body/footer structure
+   - Close button with rotate animation
+
+8. Notifications & Alerts (Lines 1550-1800)
+   - Toast notifications (slide-in right)
+   - Color-coded by type
+   - Alert boxes for page-level messages
+   - Icon + title + description support
+
+9. Tabs & Navigation (Lines 1800-1900)
+   - Tab button styling
+   - Active state with gradient underline
+   - Tab content with fade animation
+
+10. Bidding Cards (Lines 1900-2050)
+    - Bid card containers
+    - Status badges
+    - Transaction indicators
+    - Bid information display
+
+11. Stat Cards (Lines 2050-2150)
+    - Dashboard metric cards
+    - Color-coded borders
+    - Large number display
+    - Hover lift effect
+
+12. Empty States (Lines 2150-2250)
+    - Empty state containers
+    - Icon display
+    - Action buttons
+
+13. Loading States (Lines 2250-2300)
+    - Skeleton screens
+    - Shimmer animation
+    - Loading spinner
+
+14. Utility Classes (Lines 2300-2350)
+    - Spacing utilities (mt, mb, p)
+    - Gap classes (gap-10, gap-20)
+    - Border radius (rounded, rounded-lg)
+    - Shadow utilities
+    - Opacity utilities
+    - Display utilities (flex-center, flex-between)
+
+15. Responsive Design (Lines 2350-2459)
+    - Desktop breakpoint (1024px)
+    - Tablet breakpoint (768px)
+    - Mobile breakpoint (600px)
+    - Small phone breakpoint (400px)
+
+FEATURES SUMMARY:
+ 15 CSS Variables (colors, shadows)
+ 7 Keyframe Animations
+ 200+ CSS Selectors
+ 4 Media Query Breakpoints
+ 14 Color Variants
+ 19 Component Types
+ Full Responsive Design
+ Production Ready
+
+ANIMATION LIBRARY:
+1. slideDown - 0.6s ease-out (page headers)
+2. fadeIn - 0.6s ease-out (content)
+3. slideInRight - 0.4s cubic-bezier (notifications)
+4. slideUp - 0.4s cubic-bezier (modals)
+5. pulse - 2s infinite (pending states)
+6. spin - 0.8s linear (loading spinner)
+7. loading - 1.5s infinite (shimmer effect)
+
+BROWSER SUPPORT:
+ Chrome 88+
+ Firefox 87+
+ Safari 14+
+ iOS Safari 14+
+ Android Chrome
+ All modern mobile browsers
+
+STATUS:  PRODUCTION READY
