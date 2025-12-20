@@ -11,6 +11,7 @@ import joblib
 import os
 from datetime import datetime
 from forecast_engine import ForecastEngine
+from forecast_dashboard_enhanced import create_forecast_dashboard_routes, ENHANCED_DASHBOARD_HTML
 
 # ============================================================
 # CONFIGURATION
@@ -699,19 +700,24 @@ def forecast_dashboard():
 def forecast_crop(crop_name):
     """
     Get 12-month price forecast for a crop using ARIMA
+    Location-aware: Supports state/region-based price variations
+    Query params: location (optional)
     Returns: prices, trends, and market insights
     """
     try:
-        forecast_data = forecast_engine.forecast_arima(crop_name, months_ahead=12)
-        insights = forecast_engine.get_market_insights(crop_name)
+        location = request.args.get('location', None)  # Get location from query params
+        forecast_data = forecast_engine.forecast_arima(crop_name, months_ahead=12, location=location)
+        insights = forecast_engine.get_market_insights(crop_name, location=location)
         
         return jsonify({
             'status': 'success',
             'crop': crop_name,
+            'location': location if location else 'National Average',
             'current_price': round(float(forecast_data['historical'][-1]), 2),
             'forecast_prices': [round(float(p), 2) for p in forecast_data['forecast']],
             'confidence_lower': [round(float(p), 2) for p in forecast_data['lower_ci']],
             'confidence_upper': [round(float(p), 2) for p in forecast_data['upper_ci']],
+            'location_multiplier': forecast_data['location_multiplier'],
             'insights': insights,
             'months': list(range(1, 13))
         })
@@ -806,6 +812,70 @@ def market_insights():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/location-based-forecast', methods=['POST'])
+def location_based_forecast():
+    """
+    Get location-specific crop recommendations and forecasts
+    Input: location, current_crop, area_acres, cost_per_acre
+    Returns: Recommendations tailored to the farmer's location
+    """
+    try:
+        data = request.get_json()
+        location = data.get('location', '').lower()
+        current_crop = data.get('current_crop', 'wheat')
+        area_acres = float(data.get('area_acres', 5))
+        cost_per_acre = float(data.get('cost_per_acre', 100000))
+        
+        if not location:
+            return jsonify({'error': 'Location is required'}), 400
+        
+        # Get location-based recommendations
+        recommendation = forecast_engine.get_location_based_recommendation(
+            location,
+            current_crop,
+            area_acres,
+            cost_per_acre
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'location': location,
+            'current_crop': current_crop,
+            'recommendations': recommendation['recommendations'],
+            'top_oilseed': recommendation['top_oilseed'],
+            'suitable_crops': recommendation['suitable_crops_for_location']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forecast-by-location/<crop_name>/<location>', methods=['GET'])
+def forecast_by_location(crop_name, location):
+    """
+    Get forecast for a specific crop in a specific location
+    Path params: crop_name, location
+    Returns: Location-adjusted price forecast
+    """
+    try:
+        forecast_data = forecast_engine.forecast_arima(crop_name, months_ahead=12, location=location)
+        insights = forecast_engine.get_market_insights(crop_name, location=location)
+        
+        return jsonify({
+            'status': 'success',
+            'crop': crop_name,
+            'location': location,
+            'current_price': round(float(forecast_data['historical'][-1]), 2),
+            'forecast_prices': [round(float(p), 2) for p in forecast_data['forecast']],
+            'confidence_lower': [round(float(p), 2) for p in forecast_data['lower_ci']],
+            'confidence_upper': [round(float(p), 2) for p in forecast_data['upper_ci']],
+            'location_multiplier': forecast_data['location_multiplier'],
+            'insights': insights,
+            'months': list(range(1, 13))
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404
@@ -820,8 +890,13 @@ def server_error(error):
 # MAIN
 # ============================================================
 
+# Register enhanced forecast dashboard routes
+create_forecast_dashboard_routes(app)
+
 if __name__ == "__main__":
     print(f"[OK] Dashboard ready!")
-    print(f"[INFO] Open: http://localhost:5000")
+    print(f"[INFO] Yield Prediction: http://localhost:5000")
+    print(f"[INFO] Forecast (Old): http://localhost:5000/forecast")
+    print(f"[INFO] Enhanced Forecast Dashboard: http://localhost:5000/forecast-dashboard")
     print(f"[INFO] Press CTRL+C to stop\n")
     app.run(host='0.0.0.0', port=5000, debug=True)

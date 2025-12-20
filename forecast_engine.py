@@ -1,6 +1,7 @@
 """
 FORECAST ENGINE - ARIMA Time Series + Oilseed Recommendations
 Predicts market prices for next 12 months and recommends oilseed shifting
+Location-based forecasting: Supports state-level price variations
 """
 
 import pandas as pd
@@ -13,17 +14,40 @@ warnings.filterwarnings('ignore')
 class ForecastEngine:
     """
     Forecast prices and recommend crop shifting based on market trends
+    Supports location-based forecasting for different states/regions
     """
     
     def __init__(self):
         self.oilseeds = ['groundnut', 'sunflower', 'soybean', 'mustard', 'coconut']
         self.scaler = MinMaxScaler()
         
-    def generate_synthetic_price_data(self, crop_name, months=36):
+        # Location-based price variations (multiplier from national average)
+        self.location_multipliers = {
+            'maharashtra': 1.05,      # 5% higher prices
+            'punjab': 0.98,           # 2% lower prices
+            'karnataka': 1.08,        # 8% higher prices
+            'rajasthan': 0.95,        # 5% lower prices
+            'madhya_pradesh': 1.02,   # 2% higher prices
+            'andhra_pradesh': 1.03,   # 3% higher prices
+            'bihar': 0.97,            # 3% lower prices
+            'uttar_pradesh': 0.99,    # 1% lower prices
+        }
+        
+        # Oilseed production zones
+        self.oilseed_zones = {
+            'groundnut': ['maharashtra', 'karnataka', 'andhra_pradesh', 'rajasthan'],
+            'sunflower': ['karnataka', 'maharashtra', 'madhya_pradesh'],
+            'soybean': ['madhya_pradesh', 'maharashtra', 'rajasthan'],
+            'mustard': ['rajasthan', 'madhya_pradesh', 'uttar_pradesh'],
+            'coconut': ['karnataka', 'andhra_pradesh'],
+        }
+        
+    def generate_synthetic_price_data(self, crop_name, months=36, location=None):
         """
         Generate realistic historical price data (₹/quintal)
+        Adjusts for location-based variations
         """
-        np.random.seed(hash(crop_name) % 2**32)
+        np.random.seed(hash(crop_name + str(location)) % 2**32)
         
         # Base prices by crop
         base_prices = {
@@ -39,6 +63,10 @@ class ForecastEngine:
         }
         
         base = base_prices.get(crop_name.lower(), 5000)
+        
+        # Apply location multiplier if provided
+        if location and location.lower() in self.location_multipliers:
+            base = base * self.location_multipliers[location.lower()]
         
         # Generate prices with trend and seasonality
         prices = []
@@ -57,14 +85,22 @@ class ForecastEngine:
         
         return np.array(prices)
     
-    def forecast_arima(self, crop_name, months_ahead=12, historical_months=36):
+    def forecast_arima(self, crop_name, months_ahead=12, historical_months=36, location=None):
         """
         Use simple trend forecasting (ARIMA often times out on Windows)
-        Returns: [forecasted_prices, confidence_intervals]
+        Location-aware: Returns price forecasts adjusted for state/region
+        
+        Args:
+            crop_name: Name of oilseed crop
+            months_ahead: Number of months to forecast (default 12)
+            historical_months: Historical data months (default 36)
+            location: State/region name (optional, for location-based adjustment)
+        
+        Returns: Dict with forecasted_prices, confidence_intervals, location info
         """
         try:
             # Generate or load historical data
-            historical_prices = self.generate_synthetic_price_data(crop_name, historical_months)
+            historical_prices = self.generate_synthetic_price_data(crop_name, historical_months, location)
             
             # Use simple exponential smoothing instead of ARIMA (faster, more reliable)
             # Calculate trend from last 12 months
@@ -93,10 +129,12 @@ class ForecastEngine:
             
             return {
                 'crop': crop_name,
+                'location': location if location else 'National Average',
                 'historical': historical_prices.tolist(),
                 'forecast': forecast,
                 'lower_ci': lower_ci,
-                'upper_ci': upper_ci
+                'upper_ci': upper_ci,
+                'location_multiplier': self.location_multipliers.get(location.lower(), 1.0) if location else 1.0
             }
         
         except Exception as e:
@@ -217,11 +255,12 @@ class ForecastEngine:
             'oilseed_recommendation': [r for r in recommendations if r['is_oilseed']][0] if any(r['is_oilseed'] for r in recommendations) else None
         }
     
-    def get_market_insights(self, crop_name):
+    def get_market_insights(self, crop_name, location=None):
         """
         Provide detailed market insights for a crop
+        Location-aware: Adjusts insights based on state/region
         """
-        forecast_data = self.forecast_arima(crop_name, months_ahead=12)
+        forecast_data = self.forecast_arima(crop_name, months_ahead=12, location=location)
         
         prices = np.array(forecast_data['forecast'])  # Convert to numpy array
         historical = np.array(forecast_data['historical'])
@@ -243,6 +282,8 @@ class ForecastEngine:
         
         return {
             'crop': crop_name,
+            'location': location if location else 'National Average',
+            'location_multiplier': forecast_data['location_multiplier'],
             'current_price': round(current_price, 2),
             'forecast_average': round(forecast_avg, 2),
             'price_change_12m': round(price_change, 2),
@@ -252,10 +293,66 @@ class ForecastEngine:
             'volatility': round(float(prices.std()), 2),
             'recommendation': "SHIFT TO THIS CROP" if price_change > 15 else "CONSIDER GROWING"
         }
+    
+    def get_location_based_recommendation(self, farmer_location, farmer_current_crop, 
+                                         farmer_area_acres=5, farmer_cost_per_acre=100000):
+        """
+        Get crop recommendations specific to farmer's location
+        Considers local market conditions and suitable crops
+        """
+        crops_to_check = self.oilseeds
+        
+        # Filter crops suitable for the location
+        if farmer_location.lower() in self.oilseed_zones:
+            suitable_crops = self.oilseed_zones[farmer_location.lower()]
+            # Include suitable crops plus other oilseeds
+            crops_to_check = list(set(suitable_crops + self.oilseeds))
+        
+        recommendations = []
+        for crop in crops_to_check:
+            try:
+                insights = self.get_market_insights(crop, farmer_location)
+                forecast_data = self.forecast_arima(crop, months_ahead=12, location=farmer_location)
+                
+                # Yield estimates
+                yield_estimates = {
+                    'groundnut': 1200, 'sunflower': 1800, 'soybean': 1500,
+                    'mustard': 1000, 'coconut': 3000
+                }
+                
+                yield_qty = yield_estimates.get(crop, 1500)
+                yield_quintal = yield_qty / 100
+                
+                avg_price = insights['forecast_average']
+                annual_revenue = yield_quintal * avg_price * farmer_area_acres
+                annual_cost = farmer_cost_per_acre * farmer_area_acres
+                profit = annual_revenue - annual_cost
+                
+                recommendations.append({
+                    'crop': crop,
+                    'location': farmer_location,
+                    'suitable_for_location': crop in self.oilseed_zones.get(farmer_location.lower(), self.oilseeds),
+                    'avg_price_12m': round(insights['forecast_average'], 2),
+                    'price_trend': round(insights['price_change_12m'], 2),
+                    'estimated_profit': round(profit, 2),
+                    'profit_per_acre': round(profit / farmer_area_acres, 2),
+                    'market_outlook': insights['market_outlook'],
+                    'volatility': round(insights['volatility'], 2),
+                    'location_price_multiplier': insights['location_multiplier']
+                })
+            except Exception as e:
+                print(f"Error getting recommendation for {crop} in {farmer_location}: {e}")
+        
+        # Sort by profit
+        recommendations.sort(key=lambda x: x['estimated_profit'], reverse=True)
+        
+        return {
+            'location': farmer_location,
+            'recommendations': recommendations[:3],  # Top 3
+            'top_oilseed': recommendations[0] if recommendations else None,
+            'suitable_crops_for_location': self.oilseed_zones.get(farmer_location.lower(), self.oilseeds)
+        }
 
-# ============================================================
-# API ENDPOINTS FOR FLASK
-# ============================================================
 
 def get_forecast_data(crop_name):
     """

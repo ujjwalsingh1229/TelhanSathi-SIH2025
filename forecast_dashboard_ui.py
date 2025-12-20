@@ -516,7 +516,14 @@ FORECAST_DASHBOARD_HTML = """
 
         function updateRecommendations(data, area) {
             const topCrop = data.top_oilseed;
-            if (!topCrop) return;
+            if (!topCrop) {
+                document.getElementById('recommendationsContent').innerHTML = `
+                    <div class="metric" style="padding: 20px; text-align: center; color: #999;">
+                        Unable to load recommendations. Please try again.
+                    </div>
+                `;
+                return;
+            }
 
             const profitIncrease = ((topCrop.estimated_annual_profit - (topCrop.estimated_annual_profit * 0.3)) / (topCrop.estimated_annual_profit * 0.3) * 100).toFixed(0);
 
@@ -545,11 +552,11 @@ FORECAST_DASHBOARD_HTML = """
                 </div>
                 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
                     <strong>Other Recommendations:</strong>
-                    ${data.recommendations.slice(1, 3).map(r => `
+                    ${(data.top_recommendations && data.top_recommendations && data.top_recommendations.length > 1) ? data.top_recommendations.slice(1).map(r => `
                         <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 6px;">
                             <strong>${r.crop.toUpperCase()}</strong> - Est. Profit: ₹${(r.estimated_annual_profit / 100000).toFixed(1)}L
                         </div>
-                    `).join('')}
+                    `).join('') : '<div style="margin-top: 10px; color: #999;">No additional recommendations available</div>'}
                 </div>
             `;
             document.getElementById('recommendationsContent').innerHTML = content;
@@ -605,13 +612,18 @@ FORECAST_DASHBOARD_HTML = """
 
         function updateComparisonTable(comparison) {
             const tbody = document.getElementById('comparisonTableBody');
+            if (!comparison || Object.keys(comparison).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No comparison data available</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = Object.entries(comparison).map(([crop, data]) => `
                 <tr>
                     <td class="crop-name">${crop.toUpperCase()}</td>
-                    <td>₹${data.avg_price.toFixed(0)}</td>
-                    <td>${data.price_growth > 0 ? '📈' : '📉'} ${data.price_growth.toFixed(1)}%</td>
-                    <td>₹${((data.avg_price * 18 * 5 / 100) - 100000).toFixed(0)}</td>
-                    <td>₹${data.volatility.toFixed(0)}</td>
+                    <td>₹${(data.avg_price || 0).toFixed(0)}</td>
+                    <td>${(data.price_growth || 0) > 0 ? '📈' : '📉'} ${(data.price_growth || 0).toFixed(1)}%</td>
+                    <td>₹${(((data.avg_price || 0) * 18 * 5 / 100) - 100000).toFixed(0)}</td>
+                    <td>₹${(data.volatility || 0).toFixed(0)}</td>
                 </tr>
             `).join('');
         }
